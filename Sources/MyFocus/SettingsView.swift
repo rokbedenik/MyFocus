@@ -6,7 +6,8 @@ struct SettingsView: View {
     @ObservedObject var calendar: CalendarWatcher
 
     var body: some View {
-        Form {
+        TabView {
+            Form {
             Section(L.t("Focuses")) {
                 HStack {
                     Stepper(value: $settings.maxFocuses, in: AppSettings.maxFocusesRange) {
@@ -37,6 +38,20 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section(L.t("Language")) {
+                Picker(L.t("Language"), selection: $settings.language) {
+                    ForEach(Language.allCases) { lang in
+                        Text(lang.label).tag(lang)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+            }
+            .formStyle(.grouped)
+            .tabItem { Label(L.t("General"), systemImage: "gearshape") }
+
+            Form {
             Section(L.t("Shortcuts")) {
                 shortcutRow(L.t("Show/hide window"), $settings.toggleShortcut)
                 shortcutRow(L.t("New focus"), $settings.newFocusShortcut)
@@ -45,7 +60,11 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            }
+            .formStyle(.grouped)
+            .tabItem { Label(L.t("Shortcuts"), systemImage: "keyboard") }
 
+            Form {
             Section(L.t("Inactivity nudge")) {
                 HStack {
                     Stepper(value: $settings.nudgeMinutes, in: AppSettings.nudgeMinutesRange, step: 5) {
@@ -105,7 +124,11 @@ struct SettingsView: View {
                     NSWorkspace.shared.open(URL(string: "shortcuts://")!)
                 }
             }
+            }
+            .formStyle(.grouped)
+            .tabItem { Label(L.t("Behavior"), systemImage: "bell.badge") }
 
+            Form {
             Section(L.t("Sync")) {
                 Toggle(L.t("Keep data in a cloud folder (for a second Mac)"), isOn: $settings.syncEnabled)
                 HStack {
@@ -119,19 +142,11 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-
-            Section(L.t("Language")) {
-                Picker(L.t("Language"), selection: $settings.language) {
-                    ForEach(Language.allCases) { lang in
-                        Text(lang.label).tag(lang)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
             }
+            .formStyle(.grouped)
+            .tabItem { Label(L.t("Sync"), systemImage: "arrow.triangle.2.circlepath.icloud") }
         }
-        .formStyle(.grouped)
-        .frame(width: 460)
+        .frame(width: 480)
         .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -171,7 +186,7 @@ final class SettingsWindowController {
     func show() {
         if window == nil {
             let w = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 460, height: 900),
+                contentRect: NSRect(x: 0, y: 0, width: 480, height: 560),
                 styleMask: [.titled, .closable],
                 backing: .buffered,
                 defer: false

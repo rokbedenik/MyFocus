@@ -98,6 +98,8 @@ enum L {
             "Klikni polje in pritisni tipke. Uporabi ⌘, ⌃ ali ⌥ skupaj s tipko. Esc prekliče, ⌫ bližnjico izklopi.",
         "Press keys …": "Pritisni tipke …",
         "Appearance": "Videz",
+        "General": "Splošno",
+        "Behavior": "Vedenje",
         "Size": "Velikost",
         "Reset": "Ponastavi",
         "Scales the whole panel: text, icons, spacing and width.": "Skalira celotno okno: besedilo, ikone, razmike in širino.",
