@@ -1,21 +1,58 @@
 import SwiftUI
 import AppKit
 
+enum SettingsPage: String, CaseIterable, Identifiable {
+    case general, shortcuts, behavior, sync
+    var id: String { rawValue }
+
+    // L10n keys
+    var title: String {
+        switch self {
+        case .general: return "General"
+        case .shortcuts: return "Shortcuts"
+        case .behavior: return "Behavior"
+        case .sync: return "Sync"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .general: return "gearshape"
+        case .shortcuts: return "keyboard"
+        case .behavior: return "bell.badge"
+        case .sync: return "arrow.triangle.2.circlepath.icloud"
+        }
+    }
+}
+
 struct SettingsView: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject var calendar: CalendarWatcher
 
+    @State private var page: SettingsPage? = .general
+
     var body: some View {
-        TabView {
-            Form {
-            Section(L.t("Focuses")) {
-                HStack {
-                    Stepper(value: $settings.maxFocuses, in: AppSettings.maxFocusesRange) {
-                        Text(L.t("Maximum focuses at once"))
-                    }
-                    TextField("", value: $settings.maxFocuses, format: .number)
-                        .frame(width: 50)
-                        .multilineTextAlignment(.trailing)
+        HStack(spacing: 0) {
+            List(SettingsPage.allCases, selection: $page) { p in
+                Label(L.t(p.title), systemImage: p.icon)
+            }
+            .listStyle(.sidebar)
+            .frame(width: 170)
+
+            Divider()
+
+            Group {
+                switch page ?? .general {
+                case .general:
+                    Form {
+                    Section(L.t("Focuses")) {
+                        HStack {
+                            Stepper(value: $settings.maxFocuses, in: AppSettings.maxFocusesRange) {
+                                Text(L.t("Maximum focuses at once"))
+                            }
+                            TextField("", value: $settings.maxFocuses, format: .number)
+                                .frame(width: 50)
+                                .multilineTextAlignment(.trailing)
                 }
                 Text(L.t("Allowed %d–%d. If the limit is below the number of open focuses, existing ones stay but you cannot add new ones.",
                          AppSettings.maxFocusesRange.lowerBound, AppSettings.maxFocusesRange.upperBound))
@@ -48,9 +85,8 @@ struct SettingsView: View {
                 .labelsHidden()
             }
             }
-            .formStyle(.grouped)
-            .tabItem { Label(L.t("General"), systemImage: "gearshape") }
 
+            case .shortcuts:
             Form {
             Section(L.t("Shortcuts")) {
                 shortcutRow(L.t("Show/hide window"), $settings.toggleShortcut)
@@ -61,9 +97,8 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
             }
-            .formStyle(.grouped)
-            .tabItem { Label(L.t("Shortcuts"), systemImage: "keyboard") }
 
+            case .behavior:
             Form {
             Section(L.t("Inactivity nudge")) {
                 HStack {
@@ -125,9 +160,8 @@ struct SettingsView: View {
                 }
             }
             }
-            .formStyle(.grouped)
-            .tabItem { Label(L.t("Behavior"), systemImage: "bell.badge") }
 
+            case .sync:
             Form {
             Section(L.t("Sync")) {
                 Toggle(L.t("Keep data in a cloud folder (for a second Mac)"), isOn: $settings.syncEnabled)
@@ -143,11 +177,12 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
             }
+                }
+            }
             .formStyle(.grouped)
-            .tabItem { Label(L.t("Sync"), systemImage: "arrow.triangle.2.circlepath.icloud") }
+            .frame(width: 480)
         }
-        .frame(width: 480)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(height: 560)
     }
 
     private func shortcutRow(_ title: String, _ binding: Binding<KeyShortcut?>) -> some View {
@@ -186,7 +221,7 @@ final class SettingsWindowController {
     func show() {
         if window == nil {
             let w = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 480, height: 560),
+                contentRect: NSRect(x: 0, y: 0, width: 650, height: 560),
                 styleMask: [.titled, .closable],
                 backing: .buffered,
                 defer: false
