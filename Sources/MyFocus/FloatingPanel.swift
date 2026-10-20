@@ -10,6 +10,9 @@ final class FloatingPanel: NSPanel {
     // stays put: near the top the window grows downward, near the bottom it grows upward (AppKit default).
     private var anchorTop = false
     private var anchoredTop: CGFloat = 0
+    private var anchoredBottom: CGFloat = 0
+    // Size at the last remembered position; a move reported while the size differs is a side effect of a resize
+    private var lastSize: CGSize = .zero
     private var observers: [NSObjectProtocol] = []
     private static let positionsKey = "panelPositions" // [arrangement: [minX, minY, maxY, anchorTop]]
     private static let legacyPositionKey = "panelPosition"
@@ -46,10 +49,13 @@ final class FloatingPanel: NSPanel {
 
         let nc = NotificationCenter.default
         observers.append(nc.addObserver(forName: NSWindow.didMoveNotification, object: self, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.rememberPosition() }
+            MainActor.assumeIsolated {
+                guard let self, self.frame.size == self.lastSize else { return }
+                self.rememberPosition()
+            }
         })
         observers.append(nc.addObserver(forName: NSWindow.didResizeNotification, object: self, queue: .main) { [weak self] _ in
-            Task { @MainActor in
+            MainActor.assumeIsolated {
                 self?.keepAnchored()
                 self?.touch()
             }
@@ -135,9 +141,16 @@ final class FloatingPanel: NSPanel {
         if let v = positions[Self.arrangementKey], v.count == 4 {
             let top = v[3] != 0
             setFrameOrigin(NSPoint(x: v[0], y: top ? v[2] - frame.height : v[1]))
-            if !NSScreen.screens.contains(where: { $0.visibleFrame.intersects(frame) }) {
-                placeDefault()
+            if NSScreen.screens.contains(where: { $0.visibleFrame.intersects(frame) }) {
+                // Keep the saved anchor; the content has not been laid out yet, so the height is still provisional
+                anchorTop = top
+                anchoredTop = v[2]
+                anchoredBottom = v[1]
+                lastSize = frame.size
+                isPositionRestored = true
+                return
             }
+            placeDefault()
         } else {
             placeDefault()
         }
@@ -155,6 +168,8 @@ final class FloatingPanel: NSPanel {
         let vf = (screen ?? NSScreen.main)?.visibleFrame ?? frame
         anchorTop = (vf.maxY - frame.maxY) < (frame.minY - vf.minY)
         anchoredTop = frame.maxY
+        anchoredBottom = frame.minY
+        lastSize = frame.size
         var positions = UserDefaults.standard.dictionary(forKey: Self.positionsKey) as? [String: [Double]] ?? [:]
         positions[Self.arrangementKey] = [frame.minX, frame.minY, frame.maxY, anchorTop ? 1.0 : 0.0]
         UserDefaults.standard.set(positions, forKey: Self.positionsKey)
@@ -162,13 +177,17 @@ final class FloatingPanel: NSPanel {
         UserDefaults.standard.synchronize()
     }
 
+    // After a content-driven resize put the anchored edge back where it was, whichever edge AppKit kept
     private func keepAnchored() {
-        // AppKit keeps the bottom edge; only intervene when the top edge is the anchor
-        guard anchorTop, abs(frame.maxY - anchoredTop) > 0.5 else { return }
-        var y = anchoredTop - frame.height
-        if let vf = (screen ?? NSScreen.main)?.visibleFrame, y < vf.minY {
-            y = vf.minY
+        guard isPositionRestored else { return }
+        var y = anchorTop ? anchoredTop - frame.height : anchoredBottom
+        if let vf = (screen ?? NSScreen.main)?.visibleFrame {
+            y = min(max(y, vf.minY), vf.maxY - frame.height)
         }
-        setFrameOrigin(NSPoint(x: frame.minX, y: y))
+        if abs(frame.minY - y) > 0.5 {
+            setFrameOrigin(NSPoint(x: frame.minX, y: y))
+        }
+        lastSize = frame.size
+        rememberPosition()
     }
 }

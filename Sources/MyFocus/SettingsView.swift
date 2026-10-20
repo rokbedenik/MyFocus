@@ -117,7 +117,7 @@ struct SettingsView: View {
             Section(L.t("Window")) {
                 HStack {
                     Stepper(value: $settings.dimAfterSeconds, in: AppSettings.dimAfterRange, step: 5) {
-                        Text(L.t("Dim the window when idle after"))
+                        Text(L.t("While paused, dim the window after"))
                     }
                     TextField("", value: $settings.dimAfterSeconds, format: .number)
                         .frame(width: 50)
@@ -125,7 +125,7 @@ struct SettingsView: View {
                     Text(L.t("seconds (0 = never)"))
                         .foregroundStyle(.secondary)
                 }
-                Text(L.t("The window fades when the mouse is not over it and comes back on hover, on a switch, or when a nudge is due."))
+                Text(L.t("Only while no focus is running. The window fades when the mouse is not over it and comes back on hover, when a focus starts, or when a nudge is due."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

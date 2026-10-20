@@ -78,10 +78,10 @@ enum L {
         "minutes (0 = off)": "minutah (0 = izklopljeno)",
         "Language": "Jezik",
         "Window": "Okno",
-        "Dim the window when idle after": "Zatemni okno pri neaktivnosti po",
+        "While paused, dim the window after": "Med pavzo zatemni okno po",
         "seconds (0 = never)": "sekundah (0 = nikoli)",
-        "The window fades when the mouse is not over it and comes back on hover, on a switch, or when a nudge is due.":
-            "Okno zbledi, ko miška ni nad njim, in se vrne ob prehodu z miško, ob preklopu ali ko je na vrsti opozorilo.",
+        "Only while no focus is running. The window fades when the mouse is not over it and comes back on hover, when a focus starts, or when a nudge is due.":
+            "Samo ko ne teče noben fokus. Okno zbledi, ko miška ni nad njim, in se vrne ob prehodu z miško, ob zagonu fokusa ali ko je na vrsti opozorilo.",
         "Log …": "Dnevnik …",
         "Do Not Disturb": "Ne moti",
         "Turn on Do Not Disturb while a focus is running": "Vklopi Ne moti, dokler teče fokus",

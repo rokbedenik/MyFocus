@@ -98,8 +98,8 @@ Optional VS Code task (`.vscode/tasks.json`) so ⌘⇧B does step 3:
   a focus on both Macs at once. For iCloud Drive keep the folder downloaded (no "Optimize Mac Storage" eviction).
 - **Inactivity nudge**: after N minutes on the same focus (default 45, 0 = off) the window border turns orange and asks
   "Still working on this?" with Yes / ⏸.
-- **Idle dimming**: the window fades after N seconds without the mouse over it (default 10, 0 = never) and comes back
-  on hover, on a switch, or when a nudge is due.
+- **Idle dimming**: while paused, the window fades after N seconds without the mouse over it (default 10, 0 = never)
+  and comes back on hover, when a focus starts, or when a nudge is due. A running focus is never dimmed.
 - **Do Not Disturb** (off by default): while a focus runs, DND is on; it goes off on pause, screen lock, sleep and
   quit. See below for the one-time setup.
 - Locking the screen or sleeping pauses; unlocking resumes the last focus.

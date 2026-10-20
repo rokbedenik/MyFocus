@@ -45,7 +45,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.refreshStatusTitle()
-                self.panel.holdAwake = self.store.nudgeDue || self.calendar.suggestion != nil
+                // Dim only while paused; a running focus, a nudge or a suggestion keep the panel fully visible
+                self.panel.holdAwake = self.store.active != nil || self.store.nudgeDue || self.calendar.suggestion != nil
             }
             .store(in: &cancellables)
         // A new calendar suggestion should be seen even if the panel is dimmed
