@@ -122,8 +122,8 @@ scripts/make-dnd-shortcuts.sh
 This writes the two `.shortcut` files with the "Set Focus" action pre-configured, signs them and opens them;
 Shortcuts shows an import dialog for each — click **Add Shortcut**. Check with `shortcuts list | grep "MyFocus DND"`.
 
-If you prefer to build them by hand (or the imported action shows up unconfigured), create them in the
-**Shortcuts** app (Settings → Do Not Disturb → "Open Shortcuts"):
+If you prefer to build them by hand, create them in the **Shortcuts** app (Settings → Do Not Disturb →
+"Open Shortcuts"):
 
 | Shortcut name (exact) | Action |
 |---|---|
