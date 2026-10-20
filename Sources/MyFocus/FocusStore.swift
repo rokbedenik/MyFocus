@@ -25,7 +25,15 @@ final class FocusStore: ObservableObject {
 
     init(settings: AppSettings) {
         self.settings = settings
+        // Start from the synced file right away when sync is on, so the stale local copy never shows
         fileURL = Self.localURL
+        if settings.syncEnabled {
+            let folder = settings.syncFolder.trimmingCharacters(in: .whitespaces)
+            let synced = URL(fileURLWithPath: folder, isDirectory: true).appendingPathComponent("state.json")
+            if !folder.isEmpty, FileManager.default.fileExists(atPath: synced.path) {
+                fileURL = synced
+            }
+        }
         load(resetActive: true)
         // Refresh elapsed time display every 30 s; also notice writes from another Mac
         ticker = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
