@@ -5,6 +5,8 @@ Več fokusov, preklapljanje med njimi, čas na fokus, opomba "kje sem ostal" in 
 
 Swift + SwiftUI/AppKit, brez Xcoda. Pišeš v VS Code, gradiš s skripto.
 
+Repo: https://github.com/rokbedenik/MyFocus
+
 ## Zahteve
 
 - macOS 14+
