@@ -158,6 +158,8 @@ final class FloatingPanel: NSPanel {
         var positions = UserDefaults.standard.dictionary(forKey: Self.positionsKey) as? [String: [Double]] ?? [:]
         positions[Self.arrangementKey] = [frame.minX, frame.minY, frame.maxY, anchorTop ? 1.0 : 0.0]
         UserDefaults.standard.set(positions, forKey: Self.positionsKey)
+        // The app may be killed (reinstall) right after a move; do not leave the write pending
+        UserDefaults.standard.synchronize()
     }
 
     private func keepAnchored() {

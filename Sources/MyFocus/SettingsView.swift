@@ -35,6 +35,7 @@ struct SettingsView: View {
         HStack(spacing: 0) {
             List(SettingsPage.allCases, selection: $page) { p in
                 Label(L.t(p.title), systemImage: p.icon)
+                    .tag(p)
             }
             .listStyle(.sidebar)
             .frame(width: 170)
@@ -229,6 +230,7 @@ final class SettingsWindowController {
             w.isReleasedWhenClosed = false
             w.contentView = NSHostingView(rootView: SettingsView(settings: settings, calendar: calendar))
             w.center()
+            w.setFrameAutosaveName("MyFocusSettings")
             window = w
         }
         window?.title = L.t("My Focus – Settings")

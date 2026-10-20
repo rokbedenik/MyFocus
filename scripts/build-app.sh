@@ -58,7 +58,12 @@ fi
 if [[ "$INSTALL" == "1" ]]; then
     TARGET="/Applications/MyFocus.app"
     echo "Installing to $TARGET"
-    pkill -x MyFocus || true
+    # Graceful quit so the app flushes state and turns DND off; fall back to kill
+    if pgrep -xq MyFocus; then
+        osascript -e 'tell application "MyFocus" to quit' >/dev/null 2>&1 || true
+        for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -xq MyFocus || break; sleep 0.3; done
+        pkill -x MyFocus 2>/dev/null || true
+    fi
     rm -rf "$TARGET"
     cp -R "$APP" "$TARGET"
     open "$TARGET"
