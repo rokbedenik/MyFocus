@@ -1,4 +1,16 @@
 import Foundation
+import SwiftUI
+
+enum FocusPalette {
+    static let colors: [(name: String, color: Color)] = [
+        ("Zelena", .green), ("Modra", .blue), ("Oranzna", .orange), ("Roza", .pink),
+        ("Vijolicna", .purple), ("Turkizna", .teal), ("Rumena", .yellow), ("Rdeca", .red),
+    ]
+
+    static func color(_ index: Int) -> Color {
+        colors[((index % colors.count) + colors.count) % colors.count].color
+    }
+}
 
 struct Focus: Identifiable, Codable, Equatable {
     var id = UUID()
@@ -8,6 +20,30 @@ struct Focus: Identifiable, Codable, Equatable {
     var createdAt = Date()
     var totalSeconds: TimeInterval = 0
     var isDone = false
+    var colorIndex: Int = 0
+
+    var color: Color { FocusPalette.color(colorIndex) }
+
+    init(title: String, colorIndex: Int = 0) {
+        self.title = title
+        self.colorIndex = colorIndex
+    }
+
+    // Custom decoding so state files written before colorIndex existed still load
+    private enum CodingKeys: String, CodingKey {
+        case id, title, note, createdAt, totalSeconds, isDone, colorIndex
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        title = try c.decode(String.self, forKey: .title)
+        note = try c.decodeIfPresent(String.self, forKey: .note) ?? ""
+        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        totalSeconds = try c.decodeIfPresent(TimeInterval.self, forKey: .totalSeconds) ?? 0
+        isDone = try c.decodeIfPresent(Bool.self, forKey: .isDone) ?? false
+        colorIndex = try c.decodeIfPresent(Int.self, forKey: .colorIndex) ?? 0
+    }
 }
 
 struct SwitchEvent: Codable, Identifiable {

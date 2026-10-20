@@ -2,7 +2,9 @@ import SwiftUI
 
 struct PanelView: View {
     @ObservedObject var store: FocusStore
-    @State private var expanded = false
+    @ObservedObject var settings: AppSettings
+
+    @State private var adding = false
     @State private var newTitle = ""
     @State private var showLog = false
     @FocusState private var inputFocused: Bool
@@ -10,9 +12,25 @@ struct PanelView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             header
-            if expanded {
+            if showLog {
                 Divider()
-                if showLog { logView } else { listView }
+                logView
+            } else {
+                if !store.focuses.isEmpty {
+                    Divider()
+                    VStack(spacing: 2) {
+                        ForEach(store.focuses) { f in
+                            FocusRow(store: store, focus: f)
+                        }
+                    }
+                }
+                if adding { addField }
+                if store.focuses.isEmpty && !adding {
+                    Text("Klikni + in vpiši, na čem delaš.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                footer
             }
         }
         .padding(12)
@@ -21,101 +39,105 @@ struct PanelView: View {
         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.quaternary))
     }
 
-    // MARK: - Header: current focus
+    // MARK: - Header: drag area + state + always-visible buttons
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Circle()
-                .fill(store.active == nil ? Color.secondary : Color.green)
-                .frame(width: 8, height: 8)
-                .padding(.top, 6)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(store.active?.title ?? "Ni aktivnega fokusa")
+        HStack(spacing: 8) {
+            // Left part doubles as the drag handle for moving the window
+            HStack(spacing: 8) {
+                Image(systemName: "line.3.horizontal")
+                    .foregroundStyle(.tertiary)
+                Circle()
+                    .fill(store.active?.color ?? Color.secondary)
+                    .frame(width: 8, height: 8)
+                Text(store.active == nil ? "Pavza" : "Delam")
                     .font(.headline)
-                    .lineLimit(2)
                 if let a = store.active {
-                    Text(formatDuration(store.seconds(for: a)))
+                    Text("· \(formatDuration(store.seconds(for: a)))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    if !a.note.isEmpty {
-                        Text(a.note)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
+                        .monospacedDigit()
                 }
+                Spacer(minLength: 0)
             }
-            Spacer(minLength: 0)
+            .contentShape(Rectangle())
+            .overlay(DragHandle())
+            .help("Povleci za premik okna")
+
+            Text("\(store.focuses.count)/\(settings.maxFocuses)")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
             Button {
-                withAnimation(.easeInOut(duration: 0.15)) { expanded.toggle() }
-                if expanded { inputFocused = true }
+                adding = true
+                inputFocused = true
             } label: {
-                Image(systemName: expanded ? "chevron.up" : "chevron.down")
+                Image(systemName: "plus.circle.fill")
+                    .font(.title3)
             }
             .buttonStyle(.borderless)
-            .help("Pokaži/skrij seznam fokusov")
+            .disabled(!store.canAdd)
+            .help(store.canAdd ? "Dodaj fokus" : "Največ \(settings.maxFocuses) fokusov; enega zaključi ali izbriši")
         }
     }
 
-    // MARK: - List of focuses
-
-    private var listView: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                TextField("Nov fokus ...", text: $newTitle)
-                    .textFieldStyle(.roundedBorder)
-                    .focused($inputFocused)
-                    .onSubmit {
-                        store.add(newTitle)
-                        newTitle = ""
-                    }
-                Button("Pavza") { store.pause() }
-                    .disabled(store.active == nil)
+    private var addField: some View {
+        TextField("Nov fokus ...", text: $newTitle)
+            .textFieldStyle(.roundedBorder)
+            .focused($inputFocused)
+            .onSubmit {
+                store.add(newTitle)
+                newTitle = ""
+                adding = false
             }
-
-            ForEach(store.focuses) { f in
-                FocusRow(store: store, focus: f)
+            .onExitCommand {
+                newTitle = ""
+                adding = false
             }
+    }
 
-            if store.focuses.isEmpty {
-                Text("Vpiši, na čem delaš, in pritisni Enter.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            HStack {
-                Button("Današnji dnevnik") { showLog = true }
-                    .buttonStyle(.link)
-                    .font(.caption)
-                Spacer()
-                Text("⌃⌥F skrij/pokaži")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
+    private var footer: some View {
+        HStack {
+            Button("Dnevnik") { showLog = true }
+                .buttonStyle(.link)
+            Spacer()
+            Button("Pavza") { store.pause() }
+                .buttonStyle(.link)
+                .disabled(store.active == nil)
+            Text("⌃⌥F")
+                .foregroundStyle(.tertiary)
         }
+        .font(.caption)
     }
 
     // MARK: - Today's switch log
+
+    // One multi-line Text (not a row per event) so a drag selection can span several lines
+    private var logText: String {
+        store.todaysLog.reversed()
+            .map { "\($0.at.formatted(date: .omitted, time: .shortened))  \($0.title)" }
+            .joined(separator: "\n")
+    }
 
     private var logView: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text("Danes: \(store.todaysLog.count) preklopov").font(.subheadline.bold())
                 Spacer()
+                Button("Kopiraj") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(logText, forType: .string)
+                }
+                .buttonStyle(.link)
+                .disabled(store.todaysLog.isEmpty)
+                .help("Kopiraj cel dnevnik na odložišče")
                 Button("Nazaj") { showLog = false }.buttonStyle(.link)
             }
             ScrollView {
-                VStack(alignment: .leading, spacing: 2) {
-                    ForEach(store.todaysLog.reversed()) { e in
-                        HStack(alignment: .firstTextBaseline) {
-                            Text(e.at, format: .dateTime.hour().minute())
-                                .monospacedDigit()
-                                .foregroundStyle(.secondary)
-                            Text(e.title).lineLimit(1)
-                        }
-                        .font(.caption)
-                    }
-                }
+                Text(logText.isEmpty ? "Danes še ni preklopov." : logText)
+                    .font(.caption)
+                    .monospacedDigit()
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(maxHeight: 220)
         }
@@ -127,33 +149,37 @@ struct FocusRow: View {
     let focus: Focus
     @State private var editingNote = false
     @State private var note = ""
+    @State private var hovering = false
 
     private var isActive: Bool { store.state.activeID == focus.id }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
-                Image(systemName: isActive ? "largecircle.fill.circle" : "circle")
-                    .foregroundStyle(isActive ? Color.green : Color.secondary)
+                Image(systemName: isActive ? "largecircle.fill.circle" : "circle.fill")
+                    .foregroundStyle(focus.color)
                 Text(focus.title)
                     .lineLimit(1)
                     .fontWeight(isActive ? .semibold : .regular)
                 Spacer()
-                Text(formatDuration(store.seconds(for: focus)))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-            }
-            .contentShape(Rectangle())
-            .onTapGesture { store.switchTo(focus.id) }
-            .contextMenu {
-                Button("Opomba: kje sem ostal ...") {
-                    note = focus.note
-                    editingNote = true
+                if hovering {
+                    // Quick actions; the same ones live in the context menu
+                    Button { store.markDone(focus.id) } label: {
+                        Image(systemName: "checkmark.circle")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Končano (umakne s seznama, čas ostane v dnevniku)")
+                    Button { store.delete(focus.id) } label: {
+                        Image(systemName: "trash")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Izbriši")
+                } else {
+                    Text(formatDuration(store.seconds(for: focus)))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
                 }
-                Button("Končano") { store.markDone(focus.id) }
-                Divider()
-                Button("Izbriši", role: .destructive) { store.delete(focus.id) }
             }
 
             if editingNote {
@@ -164,14 +190,48 @@ struct FocusRow: View {
                         store.update(focus.id, note: note)
                         editingNote = false
                     }
-            } else if !focus.note.isEmpty && !isActive {
+                    .onExitCommand { editingNote = false }
+            } else if !focus.note.isEmpty {
                 Text(focus.note)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(2)
                     .padding(.leading, 22)
             }
         }
-        .padding(.vertical, 2)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(isActive ? focus.color.opacity(0.22) : (hovering ? Color.primary.opacity(0.05) : Color.clear))
+        )
+        .overlay(alignment: .leading) {
+            // Color stripe on the left edge so the color is visible even when not active
+            RoundedRectangle(cornerRadius: 2)
+                .fill(focus.color)
+                .frame(width: 3)
+                .padding(.vertical, 4)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { store.switchTo(focus.id) }
+        .onHover { hovering = $0 }
+        .contextMenu {
+            Button("Opomba: kje sem ostal ...") {
+                note = focus.note
+                editingNote = true
+            }
+            Menu("Barva") {
+                ForEach(Array(FocusPalette.colors.enumerated()), id: \.offset) { i, c in
+                    Button {
+                        store.setColor(focus.id, i)
+                    } label: {
+                        Text((i == focus.colorIndex ? "✓ " : "") + c.name)
+                    }
+                }
+            }
+            Button("Končano") { store.markDone(focus.id) }
+            Divider()
+            Button("Izbriši", role: .destructive) { store.delete(focus.id) }
+        }
     }
 }

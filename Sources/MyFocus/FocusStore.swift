@@ -3,13 +3,22 @@ import Combine
 
 @MainActor
 final class FocusStore: ObservableObject {
+    let settings: AppSettings
+
     @Published private(set) var state = AppState()
     @Published var now = Date()
 
     private let fileURL: URL
     private var ticker: Timer?
+    // Focus that was active when the screen got locked; resumed on unlock
+    private var pausedByLock: UUID?
 
-    init() {
+    // Snapshots taken before destructive actions (delete, done); newest last
+    private var undoStack: [(label: String, state: AppState)] = []
+    @Published private(set) var undoLabel: String?
+
+    init(settings: AppSettings) {
+        self.settings = settings
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("MyFocus", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -24,6 +33,7 @@ final class FocusStore: ObservableObject {
     var focuses: [Focus] { state.focuses.filter { !$0.isDone } }
     var doneFocuses: [Focus] { state.focuses.filter { $0.isDone } }
     var active: Focus? { state.focuses.first { $0.id == state.activeID } }
+    var canAdd: Bool { focuses.count < settings.maxFocuses }
 
     func seconds(for focus: Focus) -> TimeInterval {
         var s = focus.totalSeconds
@@ -42,18 +52,27 @@ final class FocusStore: ObservableObject {
 
     func add(_ title: String, activate: Bool = true) {
         let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !t.isEmpty else { return }
-        let f = Focus(title: t)
+        guard !t.isEmpty, canAdd else { return }
+        // First palette color not used by an open focus
+        let used = Set(focuses.map(\.colorIndex))
+        let color = (0..<FocusPalette.colors.count).first { !used.contains($0) } ?? focuses.count
+        let f = Focus(title: t, colorIndex: color)
         state.focuses.append(f)
         if activate { switchTo(f.id) } else { save() }
     }
 
-    func switchTo(_ id: UUID?) {
+    func setColor(_ id: UUID, _ index: Int) {
+        guard let i = state.focuses.firstIndex(where: { $0.id == id }) else { return }
+        state.focuses[i].colorIndex = index
+        save()
+    }
+
+    func switchTo(_ id: UUID?, pauseLabel: String = "(pavza)") {
         guard id != state.activeID else { return }
         closeActiveInterval()
         state.activeID = id
         state.activeSince = id == nil ? nil : Date()
-        let title = id.flatMap { i in state.focuses.first { $0.id == i }?.title } ?? "(pavza)"
+        let title = id.flatMap { i in state.focuses.first { $0.id == i }?.title } ?? pauseLabel
         state.log.append(SwitchEvent(at: Date(), focusID: id, title: title))
         // Keep the log bounded
         if state.log.count > 5000 { state.log.removeFirst(state.log.count - 5000) }
@@ -61,7 +80,26 @@ final class FocusStore: ObservableObject {
         save()
     }
 
-    func pause() { switchTo(nil) }
+    func pause() {
+        pausedByLock = nil
+        switchTo(nil)
+    }
+
+    // Screen lock / sleep: pause, remember what was running
+    func pauseForLock() {
+        guard let id = state.activeID else { return }
+        pausedByLock = id
+        switchTo(nil, pauseLabel: "(zaklenjeno)")
+    }
+
+    // Unlock / wake: resume the focus that was running before the lock
+    func resumeAfterLock() {
+        guard let id = pausedByLock else { return }
+        pausedByLock = nil
+        if state.focuses.contains(where: { $0.id == id && !$0.isDone }) {
+            switchTo(id)
+        }
+    }
 
     func update(_ id: UUID, title: String? = nil, note: String? = nil) {
         guard let i = state.focuses.firstIndex(where: { $0.id == id }) else { return }
@@ -71,6 +109,8 @@ final class FocusStore: ObservableObject {
     }
 
     func markDone(_ id: UUID) {
+        guard let f = state.focuses.first(where: { $0.id == id }) else { return }
+        snapshot("koncano \"\(f.title)\"")
         if state.activeID == id { switchTo(nil) }
         guard let i = state.focuses.firstIndex(where: { $0.id == id }) else { return }
         state.focuses[i].isDone = true
@@ -84,8 +124,30 @@ final class FocusStore: ObservableObject {
     }
 
     func delete(_ id: UUID) {
+        guard let f = state.focuses.first(where: { $0.id == id }) else { return }
+        snapshot("izbris \"\(f.title)\"")
         if state.activeID == id { switchTo(nil) }
         state.focuses.removeAll { $0.id == id }
+        save()
+    }
+
+    // MARK: - Undo
+
+    private func snapshot(_ label: String) {
+        closeActiveInterval()
+        undoStack.append((label, state))
+        if undoStack.count > 20 { undoStack.removeFirst() }
+        undoLabel = label
+    }
+
+    func undo() {
+        guard let last = undoStack.popLast() else { return }
+        closeActiveInterval()
+        state = last.state
+        // Time that passed since the snapshot is not counted
+        if state.activeID != nil { state.activeSince = Date() }
+        undoLabel = undoStack.last?.label
+        now = Date()
         save()
     }
 
