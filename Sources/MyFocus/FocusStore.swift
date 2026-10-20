@@ -8,8 +8,11 @@ final class FocusStore: ObservableObject {
     @Published private(set) var state = AppState()
     @Published var now = Date()
 
-    private let fileURL: URL
+    // Where state.json lives: Application Support, or a cloud-synced folder when sync is on
+    private(set) var fileURL: URL
     private var ticker: Timer?
+    // Modification date of the file as last written/read by us; a newer file means another Mac wrote it
+    private var knownFileDate: Date?
     // Focus that was active when the screen got locked; resumed on unlock
     private var pausedByLock: UUID?
 
@@ -22,14 +25,38 @@ final class FocusStore: ObservableObject {
 
     init(settings: AppSettings) {
         self.settings = settings
+        fileURL = Self.localURL
+        load(resetActive: true)
+        // Refresh elapsed time display every 30 s; also notice writes from another Mac
+        ticker = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.now = Date()
+                self?.reloadIfChangedExternally()
+            }
+        }
+    }
+
+    static var localURL: URL {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("MyFocus", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        fileURL = dir.appendingPathComponent("state.json")
-        load()
-        // Refresh elapsed time display every 30 s
-        ticker = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.now = Date() }
+        return dir.appendingPathComponent("state.json")
+    }
+
+    // Move the state file: nil = back to Application Support. An existing synced file is adopted,
+    // otherwise the current state is written to the new place.
+    func relocate(to folder: URL?) {
+        let target = folder.map { $0.appendingPathComponent("state.json") } ?? Self.localURL
+        guard target != fileURL else { return }
+        flush()
+        if let folder {
+            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        }
+        fileURL = target
+        if folder != nil, FileManager.default.fileExists(atPath: target.path) {
+            load(resetActive: false)
+        } else {
+            save()
         }
     }
 
@@ -195,15 +222,28 @@ final class FocusStore: ObservableObject {
         save()
     }
 
-    private func load() {
+    private var fileDate: Date? {
+        (try? FileManager.default.attributesOfItem(atPath: fileURL.path))?[.modificationDate] as? Date
+    }
+
+    // resetActive: true at app launch (time while the app was closed must not count);
+    // false when adopting a file another Mac is writing to, where activeSince is real
+    private func load(resetActive: Bool) {
         guard let data = try? Data(contentsOf: fileURL) else { return }
         let dec = JSONDecoder()
         dec.dateDecodingStrategy = .iso8601
         if let s = try? dec.decode(AppState.self, from: data) {
             state = s
-            // Do not count time while the app was not running
-            if state.activeID != nil { state.activeSince = Date() }
+            if resetActive, state.activeID != nil { state.activeSince = Date() }
+            knownFileDate = fileDate
+            now = Date()
         }
+    }
+
+    private func reloadIfChangedExternally() {
+        guard let d = fileDate else { return }
+        if let known = knownFileDate, d <= known.addingTimeInterval(1) { return }
+        load(resetActive: false)
     }
 
     private func save() {
@@ -212,6 +252,7 @@ final class FocusStore: ObservableObject {
         enc.outputFormatting = [.prettyPrinted, .sortedKeys]
         if let data = try? enc.encode(state) {
             try? data.write(to: fileURL, options: .atomic)
+            knownFileDate = fileDate
         }
     }
 }

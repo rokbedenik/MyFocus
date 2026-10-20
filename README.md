@@ -42,7 +42,16 @@ The script therefore defaults to SDK 26.5. Once Apple fixes the CLT you can remo
 ## Development workflow
 
 1. Open the folder in VS Code with the **Swift** extension (swiftlang.swift-vscode); `Package.swift` is there so the
-   extension gives you completion and inline errors.
+   extension gives you completion and inline errors. Because of the SDK 27.0 mismatch (see above) SourceKit may show
+   bogus errors such as "plugin for module 'SwiftUIMacros' not found"; point it at the working SDK in
+   `.vscode/settings.json`:
+   ```json
+   {
+     "swift.buildArguments": ["--sdk", "/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk"],
+     "swift.sourcekit-lsp.serverArguments": ["-Xswiftc", "-sdk", "-Xswiftc", "/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk"]
+   }
+   ```
+   The build script is unaffected either way.
 2. Edit code under `Sources/MyFocus/`.
 3. `scripts/build-app.sh install` – compiles, replaces the installed app and relaunches it. Compile errors are
    printed; nothing is replaced if the build fails.
@@ -78,6 +87,15 @@ Optional VS Code task (`.vscode/tasks.json`) so ⌘⇧B does step 3:
   right-click menu. Delete/done can be undone from the menu bar.
 - **Global shortcuts** (Settings → Shortcuts): show/hide window (default ⌃⌥F), new focus (off by default) and
   note on the active focus (off by default). Click the field, press the combination; ⌫ turns it off.
+- **Size** (Settings → Appearance): a slider from 80 % to 200 % scales the whole panel (text, icons, spacing, width).
+- **Calendar** (off by default): when a calendar event starts, the panel shows "Starting now: <title>" with
+  Switch / Dismiss. Switch reuses a focus with the same title or creates one. Declined and all-day events are
+  ignored; macOS asks for calendar access once.
+- **Multiple displays**: the window position is remembered per display arrangement, so docking/undocking a
+  laptop puts it back where it was on that setup.
+- **Sync** (off by default): keeps `state.json` in a folder of your choice (default `iCloud Drive/MyFocus`) so a
+  second Mac can use the same focuses. Each Mac notices the other's writes within 30 s. Last writer wins; do not run
+  a focus on both Macs at once. For iCloud Drive keep the folder downloaded (no "Optimize Mac Storage" eviction).
 - **Inactivity nudge**: after N minutes on the same focus (default 45, 0 = off) the window border turns orange and asks
   "Still working on this?" with Yes / ⏸.
 - **Idle dimming**: the window fades after N seconds without the mouse over it (default 10, 0 = never) and comes back
@@ -89,7 +107,8 @@ Optional VS Code task (`.vscode/tasks.json`) so ⌘⇧B does step 3:
 - The menu bar item shows the current focus and offers switching, pause, undo (delete/done), log, settings, show/hide
   and launch at login.
 - Language: English or Slovenian, in Settings (defaults to the system language).
-- Data: `~/Library/Application Support/MyFocus/state.json`; settings in UserDefaults (`com.rbedenik.myfocus`).
+- Data: `~/Library/Application Support/MyFocus/state.json` (or the sync folder); settings in UserDefaults
+  (`com.rbedenik.myfocus`).
 
 ### Do Not Disturb setup
 
@@ -118,6 +137,7 @@ Sources/MyFocus/
   SettingsView.swift          settings window
   LogWindow.swift             log window
   DoNotDisturb.swift          DND on/off via Shortcuts
+  CalendarWatcher.swift       EventKit polling, focus suggestion when an event starts
   L10n.swift                  string table (en/sl)
   DragHandle.swift            window drag handle
   HotKey.swift                KeyShortcut model + HotKeyCenter (Carbon global shortcuts)
@@ -146,9 +166,8 @@ macOS caches icons aggressively; after replacing the app in `/Applications` you 
 - Weekly report: time per focus, number of switches per day, longest uninterrupted stretch
 - Keyboard switching: ⌃⌥1 … ⌃⌥5 jump straight to the n-th focus
 - Pomodoro mode: optional 25/5 cycle on the active focus with the nudge bar as the break prompt
-- Calendar awareness: when a calendar event starts, offer to switch to a focus with the event's title
 - Export: today's/this week's log as CSV or Markdown for a timesheet
 - Focus templates: recurring focuses (e.g. "Mail", "Standup") re-added with one click
 - Interruption counter: a quick "I got interrupted" button that logs the moment without switching
-- Multi-display: remember the position per display arrangement
-- Sync `state.json` via iCloud Drive for use on a second Mac
+- Calendar: pick which calendars count, and end the focus when the event ends
+- Sync: proper merge instead of last-writer-wins

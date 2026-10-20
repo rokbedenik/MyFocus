@@ -3,6 +3,7 @@ import AppKit
 
 struct SettingsView: View {
     @ObservedObject var settings: AppSettings
+    @ObservedObject var calendar: CalendarWatcher
 
     var body: some View {
         Form {
@@ -17,6 +18,30 @@ struct SettingsView: View {
                 }
                 Text(L.t("Allowed %d–%d. If the limit is below the number of open focuses, existing ones stay but you cannot add new ones.",
                          AppSettings.maxFocusesRange.lowerBound, AppSettings.maxFocusesRange.upperBound))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section(L.t("Appearance")) {
+                HStack {
+                    Text(L.t("Size"))
+                    Slider(value: $settings.uiScale, in: AppSettings.uiScaleRange, step: 0.05)
+                    Text("\(Int((settings.uiScale * 100).rounded())) %")
+                        .monospacedDigit()
+                        .frame(width: 48, alignment: .trailing)
+                    Button(L.t("Reset")) { settings.uiScale = 1.0 }
+                        .disabled(settings.uiScale == 1.0)
+                }
+                Text(L.t("Scales the whole panel: text, icons, spacing and width."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section(L.t("Shortcuts")) {
+                shortcutRow(L.t("Show/hide window"), $settings.toggleShortcut)
+                shortcutRow(L.t("New focus"), $settings.newFocusShortcut)
+                shortcutRow(L.t("Note: where did I leave off"), $settings.noteShortcut)
+                Text(L.t("Click a field and press the keys. Use ⌘, ⌃ or ⌥ with the key. Esc cancels, ⌫ turns the shortcut off."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -50,13 +75,21 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section(L.t("Shortcuts")) {
-                shortcutRow(L.t("Show/hide window"), $settings.toggleShortcut)
-                shortcutRow(L.t("New focus"), $settings.newFocusShortcut)
-                shortcutRow(L.t("Note: where did I leave off"), $settings.noteShortcut)
-                Text(L.t("Click a field and press the keys. Use ⌘, ⌃ or ⌥ with the key. Esc cancels, ⌫ turns the shortcut off."))
+            Section(L.t("Calendar")) {
+                Toggle(L.t("Suggest a focus when a calendar event starts"), isOn: $settings.calendarEnabled)
+                Text(L.t("Checks your calendars once a minute. Declined and all-day events are ignored. The first time, macOS asks for calendar access."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                if settings.calendarEnabled && calendar.accessDenied {
+                    HStack {
+                        Text(L.t("Calendar access was denied. Allow it in System Settings → Privacy & Security → Calendars."))
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                        Button(L.t("Open System Settings")) {
+                            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars")!)
+                        }
+                    }
+                }
             }
 
             Section(L.t("Do Not Disturb")) {
@@ -70,6 +103,20 @@ struct SettingsView: View {
                 }
             }
 
+            Section(L.t("Sync")) {
+                Toggle(L.t("Keep data in a cloud folder (for a second Mac)"), isOn: $settings.syncEnabled)
+                HStack {
+                    Text(L.t("Folder"))
+                    TextField("", text: $settings.syncFolder)
+                        .disabled(!settings.syncEnabled)
+                    Button(L.t("Choose …")) { chooseSyncFolder() }
+                        .disabled(!settings.syncEnabled)
+                }
+                Text(L.t("state.json moves into that folder; use the same folder on the other Mac. The last Mac that writes wins, so do not run a focus on both at the same time. For iCloud Drive keep the folder downloaded (turn off \"Optimize Mac Storage\" or mark it \"Keep Downloaded\")."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section(L.t("Language")) {
                 Picker(L.t("Language"), selection: $settings.language) {
                     ForEach(Language.allCases) { lang in
@@ -81,7 +128,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 440)
+        .frame(width: 460)
         .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -93,6 +140,17 @@ struct SettingsView: View {
                 .fixedSize()
         }
     }
+
+    private func chooseSyncFolder() {
+        let p = NSOpenPanel()
+        p.canChooseDirectories = true
+        p.canChooseFiles = false
+        p.canCreateDirectories = true
+        p.directoryURL = URL(fileURLWithPath: settings.syncFolder).deletingLastPathComponent()
+        if p.runModal() == .OK, let url = p.url {
+            settings.syncFolder = url.path
+        }
+    }
 }
 
 // Standard titled window for settings; kept alive and reused
@@ -100,21 +158,23 @@ struct SettingsView: View {
 final class SettingsWindowController {
     private var window: NSWindow?
     private let settings: AppSettings
+    private let calendar: CalendarWatcher
 
-    init(settings: AppSettings) {
+    init(settings: AppSettings, calendar: CalendarWatcher) {
         self.settings = settings
+        self.calendar = calendar
     }
 
     func show() {
         if window == nil {
             let w = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 440, height: 680),
+                contentRect: NSRect(x: 0, y: 0, width: 460, height: 900),
                 styleMask: [.titled, .closable],
                 backing: .buffered,
                 defer: false
             )
             w.isReleasedWhenClosed = false
-            w.contentView = NSHostingView(rootView: SettingsView(settings: settings))
+            w.contentView = NSHostingView(rootView: SettingsView(settings: settings, calendar: calendar))
             w.center()
             window = w
         }

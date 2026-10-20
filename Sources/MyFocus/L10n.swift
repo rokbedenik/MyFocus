@@ -95,6 +95,26 @@ enum L {
         "Click a field and press the keys. Use ⌘, ⌃ or ⌥ with the key. Esc cancels, ⌫ turns the shortcut off.":
             "Klikni polje in pritisni tipke. Uporabi ⌘, ⌃ ali ⌥ skupaj s tipko. Esc prekliče, ⌫ bližnjico izklopi.",
         "Press keys …": "Pritisni tipke …",
+        "Appearance": "Videz",
+        "Size": "Velikost",
+        "Reset": "Ponastavi",
+        "Scales the whole panel: text, icons, spacing and width.": "Skalira celotno okno: besedilo, ikone, razmike in širino.",
+        "Calendar": "Koledar",
+        "Suggest a focus when a calendar event starts": "Ob začetku dogodka v koledarju predlagaj fokus",
+        "Checks your calendars once a minute. Declined and all-day events are ignored. The first time, macOS asks for calendar access.":
+            "Koledarje preveri enkrat na minuto. Zavrnjeni in celodnevni dogodki se ne upoštevajo. Prvič macOS vpraša za dostop do koledarja.",
+        "Calendar access was denied. Allow it in System Settings → Privacy & Security → Calendars.":
+            "Dostop do koledarja je zavrnjen. Dovoli ga v System Settings → Privacy & Security → Calendars.",
+        "Open System Settings": "Odpri sistemske nastavitve",
+        "Starting now: %@": "Zdaj se začenja: %@",
+        "Switch": "Preklopi",
+        "Dismiss": "Zavrni",
+        "Sync": "Sinhronizacija",
+        "Keep data in a cloud folder (for a second Mac)": "Hrani podatke v oblačni mapi (za drugi Mac)",
+        "Folder": "Mapa",
+        "Choose …": "Izberi …",
+        "state.json moves into that folder; use the same folder on the other Mac. The last Mac that writes wins, so do not run a focus on both at the same time. For iCloud Drive keep the folder downloaded (turn off \"Optimize Mac Storage\" or mark it \"Keep Downloaded\").":
+            "state.json se preseli v to mapo; na drugem Macu uporabi isto mapo. Zmaga zadnji Mac, ki zapiše, zato ne poganjaj fokusa na obeh hkrati. Pri iCloud Drive naj mapa ostane prenesena (izklopi \"Optimize Mac Storage\" ali označi \"Keep Downloaded\").",
         "Off": "Izklopljeno",
         "Show/hide window (%@)": "Pokaži/skrij okno (%@)",
         "My Focus – Log": "My Focus – dnevnik",

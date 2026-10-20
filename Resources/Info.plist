@@ -20,6 +20,8 @@
     <string>1</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>My Focus can suggest a focus when a calendar event starts. Calendar data never leaves your Mac.</string>
     <key>LSUIElement</key>
     <true/>
     <key>NSHighResolutionCapable</key>

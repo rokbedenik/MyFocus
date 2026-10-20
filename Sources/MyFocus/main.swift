@@ -8,7 +8,8 @@ import Carbon.HIToolbox
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let settings = AppSettings()
     lazy var store = FocusStore(settings: settings)
-    private lazy var settingsWindow = SettingsWindowController(settings: settings)
+    let calendar = CalendarWatcher()
+    private lazy var settingsWindow = SettingsWindowController(settings: settings, calendar: calendar)
     private lazy var logWindow = LogWindowController(store: store)
     private var dnd: DoNotDisturb!
     private var panel: FloatingPanel!
@@ -17,7 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var cancellables = Set<AnyCancellable>()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        panel = FloatingPanel { PanelView(store: store, settings: settings, commands: commands) }
+        panel = FloatingPanel { PanelView(store: store, settings: settings, commands: commands, calendar: calendar) }
         panel.restorePosition()
         panel.orderFrontRegardless()
 
@@ -39,12 +40,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .sink { [weak self] s in HotKeyCenter.shared.register(id: 3, shortcut: s) { self?.editActiveNote() } }
             .store(in: &cancellables)
 
-        store.$state.combineLatest(store.$now)
+        store.$state.combineLatest(store.$now, calendar.$suggestion)
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.refreshStatusTitle()
-                self.panel.holdAwake = self.store.nudgeDue
+                self.panel.holdAwake = self.store.nudgeDue || self.calendar.suggestion != nil
+            }
+            .store(in: &cancellables)
+        // A new calendar suggestion should be seen even if the panel is dimmed
+        calendar.$suggestion.compactMap { $0 }.removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.panel.touch() }
+            .store(in: &cancellables)
+
+        settings.$calendarEnabled.removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] on in self?.calendar.setEnabled(on) }
+            .store(in: &cancellables)
+
+        // Sync folder: debounced because the path is typed into a text field
+        settings.$syncEnabled.combineLatest(settings.$syncFolder)
+            .debounce(for: .seconds(1), scheduler: RunLoop.main)
+            .sink { [weak self] on, path in
+                let trimmed = path.trimmingCharacters(in: .whitespaces)
+                self?.store.relocate(to: on && !trimmed.isEmpty ? URL(fileURLWithPath: trimmed, isDirectory: true) : nil)
             }
             .store(in: &cancellables)
         // A switch/add/delete should bring the panel back to full opacity
