@@ -6,6 +6,8 @@ import Combine
 final class PanelCommands: ObservableObject {
     @Published var newFocusTick = 0
     @Published var noteTick = 0
+    // Set by the app delegate: shows the app menu at a right-click on the drag handle
+    var contextMenu: ((NSView, NSEvent) -> Void)?
 }
 
 // All sizes in the panel are multiplied by the user's scale factor
@@ -98,8 +100,8 @@ struct PanelView: View {
                 Spacer(minLength: 0)
             }
             .contentShape(Rectangle())
-            .overlay(DragHandle())
-            .help(L.t("Drag to move the window"))
+            .overlay(DragHandle(onContextMenu: commands.contextMenu))
+            .help(L.t("Drag to move the window, right-click for the menu"))
 
             Button { store.pause() } label: {
                 Image(systemName: "pause.circle.fill")

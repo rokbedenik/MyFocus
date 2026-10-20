@@ -35,7 +35,7 @@ enum L {
         "Paused": "Pavza",
         "Click + and type what you are working on.": "Klikni + in vpiši, na čem delaš.",
         "New focus ...": "Nov fokus ...",
-        "Drag to move the window": "Povleci za premik okna",
+        "Drag to move the window, right-click for the menu": "Povleci za premik okna, desni klik za meni",
         "Add focus": "Dodaj fokus",
         "At most %d focuses; finish or delete one": "Največ %d fokusov; enega zaključi ali izbriši",
         "Log": "Dnevnik",

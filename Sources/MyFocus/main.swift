@@ -18,6 +18,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var cancellables = Set<AnyCancellable>()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        commands.contextMenu = { [weak self] view, event in
+            guard let self else { return }
+            NSMenu.popUpContextMenu(self.buildMenu(), with: event, for: view)
+        }
         panel = FloatingPanel { PanelView(store: store, settings: settings, commands: commands, calendar: calendar) }
         panel.restorePosition()
         panel.orderFrontRegardless()
@@ -125,6 +129,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func rebuildMenu() {
+        statusItem.menu = buildMenu()
+    }
+
+    // Same menu for the status item and for a right-click on the panel's drag handle
+    private func buildMenu() -> NSMenu {
         let menu = NSMenu()
         // We set isEnabled ourselves (undo item); otherwise AppKit would re-enable it
         menu.autoenablesItems = false
@@ -157,7 +166,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(.separator())
         menu.addItem(withTitle: L.t("Quit My Focus"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-        statusItem.menu = menu
+        return menu
     }
 
     @objc private func switchFromMenu(_ sender: NSMenuItem) {
