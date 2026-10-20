@@ -1,39 +1,42 @@
 import SwiftUI
+import Combine
+
+// Requests from outside SwiftUI (global shortcuts, menu); views react to the counters changing
+@MainActor
+final class PanelCommands: ObservableObject {
+    @Published var newFocusTick = 0
+    @Published var noteTick = 0
+}
 
 struct PanelView: View {
     @ObservedObject var store: FocusStore
     @ObservedObject var settings: AppSettings
+    @ObservedObject var commands: PanelCommands
 
     @State private var adding = false
     @State private var newTitle = ""
-    @State private var showLog = false
+    @State private var editingNoteID: UUID?
     @FocusState private var inputFocused: Bool
 
-    private var nudging: Bool { store.nudgeDue && !showLog }
+    private var nudging: Bool { store.nudgeDue }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             header
-            if showLog {
+            if nudging { nudgeBar }
+            if !store.focuses.isEmpty {
                 Divider()
-                logView
-            } else {
-                if nudging { nudgeBar }
-                if !store.focuses.isEmpty {
-                    Divider()
-                    VStack(spacing: 2) {
-                        ForEach(store.focuses) { f in
-                            FocusRow(store: store, settings: settings, focus: f)
-                        }
+                VStack(spacing: 2) {
+                    ForEach(store.focuses) { f in
+                        FocusRow(store: store, settings: settings, focus: f, editingNoteID: $editingNoteID)
                     }
                 }
-                if adding { addField }
-                if store.focuses.isEmpty && !adding {
-                    Text(L.t("Click + and type what you are working on."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                footer
+            }
+            if adding { addField }
+            if store.focuses.isEmpty && !adding {
+                Text(L.t("Click + and type what you are working on."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(12)
@@ -44,6 +47,17 @@ struct PanelView: View {
                 .strokeBorder(nudging ? AnyShapeStyle(Color.orange) : AnyShapeStyle(.quaternary), lineWidth: nudging ? 2 : 1)
         )
         .animation(.easeInOut(duration: 0.3), value: nudging)
+        .onChange(of: commands.newFocusTick) {
+            guard store.canAdd else { return }
+            editingNoteID = nil
+            adding = true
+            inputFocused = true
+        }
+        .onChange(of: commands.noteTick) {
+            guard let id = store.state.activeID else { return }
+            adding = false
+            editingNoteID = id
+        }
     }
 
     // MARK: - Header: drag area + state + always-visible buttons
@@ -54,16 +68,20 @@ struct PanelView: View {
             HStack(spacing: 8) {
                 Image(systemName: "line.3.horizontal")
                     .foregroundStyle(.tertiary)
-                Circle()
-                    .fill(store.active?.color ?? Color.secondary)
-                    .frame(width: 8, height: 8)
-                Text(store.active == nil ? L.t("Paused") : L.t("Working"))
-                    .font(.headline)
                 if let a = store.active {
+                    Circle()
+                        .fill(a.color)
+                        .frame(width: 8, height: 8)
+                    Text(L.t("Working"))
+                        .font(.headline)
                     Text("· \(formatDuration(store.seconds(for: a)))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
+                } else {
+                    Image(systemName: "pause.fill")
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel(L.t("Paused"))
                 }
                 Spacer(minLength: 0)
             }
@@ -71,10 +89,16 @@ struct PanelView: View {
             .overlay(DragHandle())
             .help(L.t("Drag to move the window"))
 
-            Text("\(store.focuses.count)/\(settings.maxFocuses)")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+            Button { store.pause() } label: {
+                Image(systemName: "pause.circle.fill")
+                    .font(.title3)
+            }
+            .buttonStyle(.borderless)
+            .disabled(store.active == nil)
+            .accessibilityLabel(L.t("Pause"))
+            .help(L.t("Pause"))
             Button {
+                editingNoteID = nil
                 adding = true
                 inputFocused = true
             } label: {
@@ -102,9 +126,13 @@ struct PanelView: View {
             Button(L.t("Yes")) { store.acknowledgeNudge() }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-            Button(L.t("Pause")) { store.pause() }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+            Button { store.pause() } label: {
+                Image(systemName: "pause.fill")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .accessibilityLabel(L.t("Pause"))
+            .help(L.t("Pause"))
         }
         .padding(8)
         .background(Color.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
@@ -125,67 +153,19 @@ struct PanelView: View {
                 adding = false
             }
     }
-
-    private var footer: some View {
-        HStack {
-            Button(L.t("Log")) { showLog = true }
-                .buttonStyle(.link)
-            Spacer()
-            Button(L.t("Pause")) { store.pause() }
-                .buttonStyle(.link)
-                .disabled(store.active == nil)
-            Text("⌃⌥F")
-                .foregroundStyle(.tertiary)
-        }
-        .font(.caption)
-        .focusEffectDisabled()
-    }
-
-    // MARK: - Today's switch log
-
-    // One multi-line Text (not a row per event) so a drag selection can span several lines
-    private var logText: String {
-        store.todaysLog.reversed()
-            .map { "\($0.at.formatted(date: .omitted, time: .shortened))  \($0.title)" }
-            .joined(separator: "\n")
-    }
-
-    private var logView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(L.t("Today: %d switches", store.todaysLog.count)).font(.subheadline.bold())
-                Spacer()
-                Button(L.t("Copy")) {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(logText, forType: .string)
-                }
-                .buttonStyle(.link)
-                .disabled(store.todaysLog.isEmpty)
-                .help(L.t("Copy today's log to the clipboard"))
-                Button(L.t("Back")) { showLog = false }.buttonStyle(.link)
-            }
-            .focusEffectDisabled()
-            ScrollView {
-                Text(logText.isEmpty ? L.t("No switches yet today.") : logText)
-                    .font(.caption)
-                    .monospacedDigit()
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .frame(maxHeight: 220)
-        }
-    }
 }
 
 struct FocusRow: View {
     @ObservedObject var store: FocusStore
     @ObservedObject var settings: AppSettings
     let focus: Focus
-    @State private var editingNote = false
+    @Binding var editingNoteID: UUID?
     @State private var note = ""
     @State private var hovering = false
+    @FocusState private var noteFocused: Bool
 
     private var isActive: Bool { store.state.activeID == focus.id }
+    private var editingNote: Bool { editingNoteID == focus.id }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -203,6 +183,11 @@ struct FocusRow: View {
                 // Quick actions, always laid out so the row does not jump; visible on hover only.
                 // The same actions live in the context menu.
                 HStack(spacing: 4) {
+                    Button { startEditingNote() } label: {
+                        Image(systemName: focus.note.isEmpty ? "text.bubble" : "text.bubble.fill")
+                    }
+                    .accessibilityLabel(L.t("Note: where did I leave off"))
+                    .help(L.t("Note: where did I leave off"))
                     Button { store.markDone(focus.id) } label: {
                         Image(systemName: "checkmark.circle")
                     }
@@ -225,11 +210,12 @@ struct FocusRow: View {
                 TextField(L.t("Where did I leave off?"), text: $note)
                     .textFieldStyle(.roundedBorder)
                     .font(.caption)
+                    .focused($noteFocused)
                     .onSubmit {
                         store.update(focus.id, note: note)
-                        editingNote = false
+                        editingNoteID = nil
                     }
-                    .onExitCommand { editingNote = false }
+                    .onExitCommand { editingNoteID = nil }
             } else if !focus.note.isEmpty {
                 Text(focus.note)
                     .font(.caption)
@@ -254,11 +240,14 @@ struct FocusRow: View {
         .contentShape(Rectangle())
         .onTapGesture { store.switchTo(focus.id) }
         .onHover { hovering = $0 }
-        .contextMenu {
-            Button(L.t("Note: where did I leave off ...")) {
+        .onChange(of: editingNote) {
+            if editingNote {
                 note = focus.note
-                editingNote = true
+                noteFocused = true
             }
+        }
+        .contextMenu {
+            Button(L.t("Note: where did I leave off ...")) { startEditingNote() }
             Menu(L.t("Color")) {
                 ForEach(Array(FocusPalette.colors.enumerated()), id: \.offset) { i, c in
                     Button {
@@ -272,5 +261,10 @@ struct FocusRow: View {
             Divider()
             Button(L.t("Delete"), role: .destructive) { store.delete(focus.id) }
         }
+    }
+
+    private func startEditingNote() {
+        note = focus.note
+        editingNoteID = focus.id
     }
 }

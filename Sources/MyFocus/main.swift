@@ -9,27 +9,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let settings = AppSettings()
     lazy var store = FocusStore(settings: settings)
     private lazy var settingsWindow = SettingsWindowController(settings: settings)
+    private lazy var logWindow = LogWindowController(store: store)
+    private var dnd: DoNotDisturb!
     private var panel: FloatingPanel!
     private var statusItem: NSStatusItem!
-    private var hotKey: HotKey?
+    private let commands = PanelCommands()
     private var cancellables = Set<AnyCancellable>()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        panel = FloatingPanel { PanelView(store: store, settings: settings) }
-        panel.placeTopRightIfNew()
+        panel = FloatingPanel { PanelView(store: store, settings: settings, commands: commands) }
+        panel.restorePosition()
         panel.orderFrontRegardless()
 
         setupStatusItem()
         observeLockAndSleep()
+        dnd = DoNotDisturb(store: store, settings: settings)
 
-        // Ctrl+Opt+F toggles the panel
-        hotKey = HotKey(keyCode: UInt32(kVK_ANSI_F), modifiers: UInt32(controlKey | optionKey)) { [weak self] in
-            Task { @MainActor in self?.togglePanel() }
-        }
+        // Global shortcuts follow the settings
+        settings.$toggleShortcut.receive(on: RunLoop.main)
+            .sink { [weak self] s in
+                HotKeyCenter.shared.register(id: 1, shortcut: s) { self?.togglePanel() }
+                self?.rebuildMenu()
+            }
+            .store(in: &cancellables)
+        settings.$newFocusShortcut.receive(on: RunLoop.main)
+            .sink { [weak self] s in HotKeyCenter.shared.register(id: 2, shortcut: s) { self?.newFocus() } }
+            .store(in: &cancellables)
+        settings.$noteShortcut.receive(on: RunLoop.main)
+            .sink { [weak self] s in HotKeyCenter.shared.register(id: 3, shortcut: s) { self?.editActiveNote() } }
+            .store(in: &cancellables)
 
         store.$state.combineLatest(store.$now)
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.refreshStatusTitle() }
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.refreshStatusTitle()
+                self.panel.holdAwake = self.store.nudgeDue
+            }
+            .store(in: &cancellables)
+        // A switch/add/delete should bring the panel back to full opacity
+        store.$state.map(\.activeID).removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.panel.touch() }
             .store(in: &cancellables)
 
         // Language change: rebuild the AppKit menu (SwiftUI views observe settings themselves)
@@ -37,10 +58,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.rebuildMenu() }
             .store(in: &cancellables)
+        settings.$dimAfterSeconds
+            .receive(on: RunLoop.main)
+            .sink { [weak self] s in self?.panel.dimAfterSeconds = s }
+            .store(in: &cancellables)
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         store.flush()
+        dnd.shutdown()
     }
 
     // MARK: - Screen lock / sleep -> pause, unlock / wake -> resume
@@ -98,7 +124,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         undo.isEnabled = store.undoLabel != nil
         menu.addItem(undo)
         menu.addItem(.separator())
-        menu.addItem(withTitle: L.t("Show/hide window (⌃⌥F)"), action: #selector(togglePanel), keyEquivalent: "").target = self
+        let toggleTitle = settings.toggleShortcut.map { L.t("Show/hide window (%@)", $0.display) } ?? L.t("Show/hide window")
+        menu.addItem(withTitle: toggleTitle, action: #selector(togglePanel), keyEquivalent: "").target = self
+        menu.addItem(withTitle: L.t("Log …"), action: #selector(showLog), keyEquivalent: "l").target = self
 
         let login = NSMenuItem(title: L.t("Launch at login"), action: #selector(toggleLogin), keyEquivalent: "")
         login.target = self
@@ -121,13 +149,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func showSettings() { settingsWindow.show() }
 
+    @objc private func showLog() { logWindow.show() }
+
     @objc func togglePanel() {
         if panel.isVisible {
             panel.orderOut(nil)
         } else {
-            panel.orderFrontRegardless()
-            panel.makeKey()
+            showPanel()
         }
+    }
+
+    private func showPanel() {
+        panel.orderFrontRegardless()
+        panel.makeKey()
+        panel.touch()
+    }
+
+    // Shortcut: open the "new focus" field
+    private func newFocus() {
+        showPanel()
+        commands.newFocusTick += 1
+    }
+
+    // Shortcut: edit the note on the active focus
+    private func editActiveNote() {
+        guard store.active != nil else { return }
+        showPanel()
+        commands.noteTick += 1
     }
 
     @objc private func toggleLogin() {

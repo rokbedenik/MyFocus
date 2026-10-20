@@ -6,6 +6,7 @@ import Combine
 final class AppSettings: ObservableObject {
     static let maxFocusesRange = 1...50
     static let nudgeMinutesRange = 0...240
+    static let dimAfterRange = 0...300
 
     @Published var maxFocuses: Int {
         didSet {
@@ -24,6 +25,31 @@ final class AppSettings: ObservableObject {
         }
     }
 
+    // Seconds without the mouse over the panel before it fades; 0 disables
+    @Published var dimAfterSeconds: Int {
+        didSet {
+            let clamped = Self.dimAfterRange.clamping(dimAfterSeconds)
+            if clamped != dimAfterSeconds { dimAfterSeconds = clamped; return }
+            UserDefaults.standard.set(dimAfterSeconds, forKey: Keys.dimAfterSeconds)
+        }
+    }
+
+    // Turn on Do Not Disturb (via Shortcuts) while a focus runs, off on pause/lock/quit
+    @Published var dndEnabled: Bool {
+        didSet { UserDefaults.standard.set(dndEnabled, forKey: Keys.dndEnabled) }
+    }
+
+    // Global shortcuts; nil = off
+    @Published var toggleShortcut: KeyShortcut? {
+        didSet { Self.store(toggleShortcut, key: Keys.toggleShortcut) }
+    }
+    @Published var newFocusShortcut: KeyShortcut? {
+        didSet { Self.store(newFocusShortcut, key: Keys.newFocusShortcut) }
+    }
+    @Published var noteShortcut: KeyShortcut? {
+        didSet { Self.store(noteShortcut, key: Keys.noteShortcut) }
+    }
+
     @Published var language: Language {
         didSet {
             L.current = language
@@ -34,6 +60,11 @@ final class AppSettings: ObservableObject {
     private enum Keys {
         static let maxFocuses = "maxFocuses"
         static let nudgeMinutes = "nudgeMinutes"
+        static let dimAfterSeconds = "dimAfterSeconds"
+        static let dndEnabled = "dndEnabled"
+        static let toggleShortcut = "toggleShortcut"
+        static let newFocusShortcut = "newFocusShortcut"
+        static let noteShortcut = "noteShortcut"
         static let language = "language"
     }
 
@@ -42,8 +73,26 @@ final class AppSettings: ObservableObject {
         let storedMax = d.integer(forKey: Keys.maxFocuses)
         maxFocuses = Self.maxFocusesRange.contains(storedMax) ? storedMax : 3
         nudgeMinutes = d.object(forKey: Keys.nudgeMinutes) == nil ? 45 : d.integer(forKey: Keys.nudgeMinutes)
+        dimAfterSeconds = d.object(forKey: Keys.dimAfterSeconds) == nil ? 10 : d.integer(forKey: Keys.dimAfterSeconds)
+        dndEnabled = d.bool(forKey: Keys.dndEnabled)
+        toggleShortcut = Self.load(key: Keys.toggleShortcut, default: .toggleDefault)
+        newFocusShortcut = Self.load(key: Keys.newFocusShortcut, default: nil)
+        noteShortcut = Self.load(key: Keys.noteShortcut, default: nil)
         language = d.string(forKey: Keys.language).flatMap(Language.init(rawValue:)) ?? .system
         L.current = language
+    }
+}
+
+extension AppSettings {
+    // Shortcuts are stored as JSON; an empty value means "explicitly off" (as opposed to never set)
+    fileprivate static func store(_ s: KeyShortcut?, key: String) {
+        let data = s.flatMap { try? JSONEncoder().encode($0) } ?? Data()
+        UserDefaults.standard.set(data, forKey: key)
+    }
+
+    fileprivate static func load(key: String, default def: KeyShortcut?) -> KeyShortcut? {
+        guard let data = UserDefaults.standard.data(forKey: key) else { return def }
+        return data.isEmpty ? nil : try? JSONDecoder().decode(KeyShortcut.self, from: data)
     }
 }
 

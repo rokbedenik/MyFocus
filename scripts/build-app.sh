@@ -1,9 +1,23 @@
 #!/usr/bin/env bash
-# Builds MyFocus.app into ./dist (release by default, pass "debug" for a debug build)
+# Builds MyFocus.app into ./dist with swiftc (no Xcode; SwiftPM is only used by the editor).
+#   scripts/build-app.sh            release build -> dist/MyFocus.app
+#   scripts/build-app.sh debug      debug build
+#   scripts/build-app.sh install    release build, then copy to /Applications and launch it
+#   scripts/build-app.sh release    release build + zip to release/MyFocus.zip (the prebuilt app in the repo)
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-CONFIG="${1:-release}"
+CONFIG="release"
+INSTALL=0
+ZIP=0
+for arg in "$@"; do
+    case "$arg" in
+        debug) CONFIG="debug" ;;
+        install) INSTALL=1 ;;
+        release) ZIP=1 ;;
+        *) echo "Unknown argument: $arg" >&2; exit 2 ;;
+    esac
+done
 APP="dist/MyFocus.app"
 
 # Command Line Tools ship an SDK newer than the compiler can read; pick the newest one that works.
@@ -15,16 +29,40 @@ if [[ -z "${SDKROOT:-}" ]]; then
 fi
 echo "Using SDK: ${SDKROOT}"
 
-swift build -c "$CONFIG" --sdk "$SDKROOT"
-BIN="$(swift build -c "$CONFIG" --sdk "$SDKROOT" --show-bin-path)/MyFocus"
+OPT="-O"
+[[ "$CONFIG" == "debug" ]] && OPT="-Onone -g"
+mkdir -p build
+echo "Compiling ($CONFIG)"
+swiftc $OPT -sdk "$SDKROOT" -target arm64-apple-macosx14.0 \
+    -module-cache-path build/module-cache -module-name MyFocus \
+    Sources/MyFocus/*.swift -o build/MyFocus
 
 echo "Packaging $APP"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN" "$APP/Contents/MacOS/MyFocus"
+cp build/MyFocus "$APP/Contents/MacOS/MyFocus"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 
 # Ad-hoc signature is enough to run locally
 codesign --force --sign - "$APP"
 echo "Done: $APP"
-echo "Run with: open $APP"
+
+if [[ "$ZIP" == "1" ]]; then
+    mkdir -p release
+    rm -f release/MyFocus.zip
+    ditto -c -k --keepParent "$APP" release/MyFocus.zip
+    echo "Zipped: release/MyFocus.zip ($(du -h release/MyFocus.zip | cut -f1))"
+fi
+
+if [[ "$INSTALL" == "1" ]]; then
+    TARGET="/Applications/MyFocus.app"
+    echo "Installing to $TARGET"
+    pkill -x MyFocus || true
+    rm -rf "$TARGET"
+    cp -R "$APP" "$TARGET"
+    open "$TARGET"
+    echo "Installed and launched. Find it in Spotlight / Launchpad as 'My Focus'."
+elif [[ "$ZIP" == "0" ]]; then
+    echo "Run with: open $APP"
+fi

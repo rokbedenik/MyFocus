@@ -64,7 +64,6 @@ enum L {
         // Menu bar
         "Undo": "Razveljavi",
         "Undo: %@": "Razveljavi: %@",
-        "Show/hide window (⌃⌥F)": "Pokaži/skrij okno (⌃⌥F)",
         "Launch at login": "Zaženi ob prijavi",
         "Settings …": "Nastavitve …",
         "Quit My Focus": "Zapri My Focus",
@@ -78,6 +77,27 @@ enum L {
         "Ask \"still on this?\" after": "Vprašaj \"še vedno na tem?\" po",
         "minutes (0 = off)": "minutah (0 = izklopljeno)",
         "Language": "Jezik",
+        "Window": "Okno",
+        "Dim the window when idle after": "Zatemni okno pri neaktivnosti po",
+        "seconds (0 = never)": "sekundah (0 = nikoli)",
+        "The window fades when the mouse is not over it and comes back on hover, on a switch, or when a nudge is due.":
+            "Okno zbledi, ko miška ni nad njim, in se vrne ob prehodu z miško, ob preklopu ali ko je na vrsti opozorilo.",
+        "Log …": "Dnevnik …",
+        "Do Not Disturb": "Ne moti",
+        "Turn on Do Not Disturb while a focus is running": "Vklopi Ne moti, dokler teče fokus",
+        "Turned off on pause, screen lock, sleep and quit. macOS has no API for Focus modes, so this needs two shortcuts in the Shortcuts app, named exactly \"%@\" and \"%@\", each with a single \"Set Focus\" action (Do Not Disturb → On / Off).":
+            "Izklopi se ob pavzi, zaklepu zaslona, spanju in izhodu. macOS nima API-ja za načine Focus, zato sta potrebni dve bližnjici v aplikaciji Shortcuts (Bližnjice), poimenovani točno \"%@\" in \"%@\", vsaka z enim dejanjem \"Set Focus\" (Do Not Disturb → On / Off).",
+        "Open Shortcuts": "Odpri Shortcuts",
+        "Shortcuts": "Bližnjice",
+        "Show/hide window": "Pokaži/skrij okno",
+        "New focus": "Nov fokus",
+        "Note: where did I leave off": "Opomba: kje sem ostal",
+        "Click a field and press the keys. Use ⌘, ⌃ or ⌥ with the key. Esc cancels, ⌫ turns the shortcut off.":
+            "Klikni polje in pritisni tipke. Uporabi ⌘, ⌃ ali ⌥ skupaj s tipko. Esc prekliče, ⌫ bližnjico izklopi.",
+        "Press keys …": "Pritisni tipke …",
+        "Off": "Izklopljeno",
+        "Show/hide window (%@)": "Pokaži/skrij okno (%@)",
+        "My Focus – Log": "My Focus – dnevnik",
         "Durations use min and h in both languages.": "Trajanja uporabljajo min in h v obeh jezikih.",
     ]
 }

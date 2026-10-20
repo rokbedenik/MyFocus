@@ -63,6 +63,13 @@ final class FocusStore: ObservableObject {
         return state.log.filter { $0.at >= start }
     }
 
+    // Newest first, "HH:mm  title" per line
+    var todaysLogText: String {
+        todaysLog.reversed()
+            .map { "\($0.at.formatted(date: .omitted, time: .shortened))  \($0.title)" }
+            .joined(separator: "\n")
+    }
+
     // MARK: - Actions
 
     func add(_ title: String, activate: Bool = true) {
