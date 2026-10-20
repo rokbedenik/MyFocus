@@ -31,6 +31,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.refreshStatusTitle() }
             .store(in: &cancellables)
+
+        // Language change: rebuild the AppKit menu (SwiftUI views observe settings themselves)
+        settings.$language
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.rebuildMenu() }
+            .store(in: &cancellables)
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -83,25 +89,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(item)
         }
         if !store.focuses.isEmpty { menu.addItem(.separator()) }
-        menu.addItem(withTitle: "Pavza", action: #selector(pause), keyEquivalent: "").target = self
+        menu.addItem(withTitle: L.t("Pause"), action: #selector(pause), keyEquivalent: "").target = self
 
         let undo = NSMenuItem(
-            title: store.undoLabel.map { "Razveljavi: \($0)" } ?? "Razveljavi",
+            title: store.undoLabel.map { L.t("Undo: %@", $0) } ?? L.t("Undo"),
             action: #selector(undoAction), keyEquivalent: "z")
         undo.target = self
         undo.isEnabled = store.undoLabel != nil
         menu.addItem(undo)
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Pokaži/skrij okno (⌃⌥F)", action: #selector(togglePanel), keyEquivalent: "").target = self
+        menu.addItem(withTitle: L.t("Show/hide window (⌃⌥F)"), action: #selector(togglePanel), keyEquivalent: "").target = self
 
-        let login = NSMenuItem(title: "Zaženi ob prijavi", action: #selector(toggleLogin), keyEquivalent: "")
+        let login = NSMenuItem(title: L.t("Launch at login"), action: #selector(toggleLogin), keyEquivalent: "")
         login.target = self
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(login)
-        menu.addItem(withTitle: "Nastavitve …", action: #selector(showSettings), keyEquivalent: ",").target = self
+        menu.addItem(withTitle: L.t("Settings …"), action: #selector(showSettings), keyEquivalent: ",").target = self
 
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Zapri My Focus", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.addItem(withTitle: L.t("Quit My Focus"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         statusItem.menu = menu
     }
 

@@ -2,9 +2,10 @@ import Foundation
 import SwiftUI
 
 enum FocusPalette {
+    // Names are L10n keys
     static let colors: [(name: String, color: Color)] = [
-        ("Zelena", .green), ("Modra", .blue), ("Oranzna", .orange), ("Roza", .pink),
-        ("Vijolicna", .purple), ("Turkizna", .teal), ("Rumena", .yellow), ("Rdeca", .red),
+        ("Green", .green), ("Blue", .blue), ("Orange", .orange), ("Pink", .pink),
+        ("Purple", .purple), ("Teal", .teal), ("Yellow", .yellow), ("Red", .red),
     ]
 
     static func color(_ index: Int) -> Color {

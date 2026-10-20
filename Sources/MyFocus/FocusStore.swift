@@ -17,6 +17,9 @@ final class FocusStore: ObservableObject {
     private var undoStack: [(label: String, state: AppState)] = []
     @Published private(set) var undoLabel: String?
 
+    // When the user last confirmed "still on this?"; nil until asked
+    @Published private(set) var nudgeAckAt: Date?
+
     init(settings: AppSettings) {
         self.settings = settings
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -34,6 +37,18 @@ final class FocusStore: ObservableObject {
     var doneFocuses: [Focus] { state.focuses.filter { $0.isDone } }
     var active: Focus? { state.focuses.first { $0.id == state.activeID } }
     var canAdd: Bool { focuses.count < settings.maxFocuses }
+
+    // True when the active focus has run for nudgeMinutes without a switch or acknowledgement
+    var nudgeDue: Bool {
+        guard settings.nudgeMinutes > 0, let since = state.activeSince else { return false }
+        let base = max(since, nudgeAckAt ?? .distantPast)
+        return now.timeIntervalSince(base) >= Double(settings.nudgeMinutes * 60)
+    }
+
+    func acknowledgeNudge() {
+        nudgeAckAt = Date()
+        now = Date()
+    }
 
     func seconds(for focus: Focus) -> TimeInterval {
         var s = focus.totalSeconds
@@ -67,11 +82,12 @@ final class FocusStore: ObservableObject {
         save()
     }
 
-    func switchTo(_ id: UUID?, pauseLabel: String = "(pavza)") {
+    func switchTo(_ id: UUID?, pauseLabel: String = L.t("(paused)")) {
         guard id != state.activeID else { return }
         closeActiveInterval()
         state.activeID = id
         state.activeSince = id == nil ? nil : Date()
+        nudgeAckAt = nil
         let title = id.flatMap { i in state.focuses.first { $0.id == i }?.title } ?? pauseLabel
         state.log.append(SwitchEvent(at: Date(), focusID: id, title: title))
         // Keep the log bounded
@@ -89,7 +105,7 @@ final class FocusStore: ObservableObject {
     func pauseForLock() {
         guard let id = state.activeID else { return }
         pausedByLock = id
-        switchTo(nil, pauseLabel: "(zaklenjeno)")
+        switchTo(nil, pauseLabel: L.t("(locked)"))
     }
 
     // Unlock / wake: resume the focus that was running before the lock
@@ -110,7 +126,7 @@ final class FocusStore: ObservableObject {
 
     func markDone(_ id: UUID) {
         guard let f = state.focuses.first(where: { $0.id == id }) else { return }
-        snapshot("koncano \"\(f.title)\"")
+        snapshot(L.t("finished \"%@\"", f.title))
         if state.activeID == id { switchTo(nil) }
         guard let i = state.focuses.firstIndex(where: { $0.id == id }) else { return }
         state.focuses[i].isDone = true
@@ -125,7 +141,7 @@ final class FocusStore: ObservableObject {
 
     func delete(_ id: UUID) {
         guard let f = state.focuses.first(where: { $0.id == id }) else { return }
-        snapshot("izbris \"\(f.title)\"")
+        snapshot(L.t("deleted \"%@\"", f.title))
         if state.activeID == id { switchTo(nil) }
         state.focuses.removeAll { $0.id == id }
         save()

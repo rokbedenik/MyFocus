@@ -9,6 +9,8 @@ struct PanelView: View {
     @State private var showLog = false
     @FocusState private var inputFocused: Bool
 
+    private var nudging: Bool { store.nudgeDue && !showLog }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             header
@@ -16,17 +18,18 @@ struct PanelView: View {
                 Divider()
                 logView
             } else {
+                if nudging { nudgeBar }
                 if !store.focuses.isEmpty {
                     Divider()
                     VStack(spacing: 2) {
                         ForEach(store.focuses) { f in
-                            FocusRow(store: store, focus: f)
+                            FocusRow(store: store, settings: settings, focus: f)
                         }
                     }
                 }
                 if adding { addField }
                 if store.focuses.isEmpty && !adding {
-                    Text("Klikni + in vpiši, na čem delaš.")
+                    Text(L.t("Click + and type what you are working on."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -36,7 +39,11 @@ struct PanelView: View {
         .padding(12)
         .frame(width: 300, alignment: .leading)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.quaternary))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(nudging ? AnyShapeStyle(Color.orange) : AnyShapeStyle(.quaternary), lineWidth: nudging ? 2 : 1)
+        )
+        .animation(.easeInOut(duration: 0.3), value: nudging)
     }
 
     // MARK: - Header: drag area + state + always-visible buttons
@@ -50,7 +57,7 @@ struct PanelView: View {
                 Circle()
                     .fill(store.active?.color ?? Color.secondary)
                     .frame(width: 8, height: 8)
-                Text(store.active == nil ? "Pavza" : "Delam")
+                Text(store.active == nil ? L.t("Paused") : L.t("Working"))
                     .font(.headline)
                 if let a = store.active {
                     Text("· \(formatDuration(store.seconds(for: a)))")
@@ -62,7 +69,7 @@ struct PanelView: View {
             }
             .contentShape(Rectangle())
             .overlay(DragHandle())
-            .help("Povleci za premik okna")
+            .help(L.t("Drag to move the window"))
 
             Text("\(store.focuses.count)/\(settings.maxFocuses)")
                 .font(.caption2)
@@ -76,12 +83,36 @@ struct PanelView: View {
             }
             .buttonStyle(.borderless)
             .disabled(!store.canAdd)
-            .help(store.canAdd ? "Dodaj fokus" : "Največ \(settings.maxFocuses) fokusov; enega zaključi ali izbriši")
+            .accessibilityLabel(L.t("Add focus"))
+            .help(store.canAdd ? L.t("Add focus") : L.t("At most %d focuses; finish or delete one", settings.maxFocuses))
         }
+        // Keyboard focus ring belongs on text fields, not on icon buttons
+        .focusEffectDisabled()
+    }
+
+    // MARK: - Inactivity nudge
+
+    private var nudgeBar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .foregroundStyle(.orange)
+            Text(L.t("Still working on this?"))
+                .font(.caption)
+            Spacer()
+            Button(L.t("Yes")) { store.acknowledgeNudge() }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            Button(L.t("Pause")) { store.pause() }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+        }
+        .padding(8)
+        .background(Color.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
+        .focusEffectDisabled()
     }
 
     private var addField: some View {
-        TextField("Nov fokus ...", text: $newTitle)
+        TextField(L.t("New focus ..."), text: $newTitle)
             .textFieldStyle(.roundedBorder)
             .focused($inputFocused)
             .onSubmit {
@@ -97,16 +128,17 @@ struct PanelView: View {
 
     private var footer: some View {
         HStack {
-            Button("Dnevnik") { showLog = true }
+            Button(L.t("Log")) { showLog = true }
                 .buttonStyle(.link)
             Spacer()
-            Button("Pavza") { store.pause() }
+            Button(L.t("Pause")) { store.pause() }
                 .buttonStyle(.link)
                 .disabled(store.active == nil)
             Text("⌃⌥F")
                 .foregroundStyle(.tertiary)
         }
         .font(.caption)
+        .focusEffectDisabled()
     }
 
     // MARK: - Today's switch log
@@ -121,19 +153,20 @@ struct PanelView: View {
     private var logView: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text("Danes: \(store.todaysLog.count) preklopov").font(.subheadline.bold())
+                Text(L.t("Today: %d switches", store.todaysLog.count)).font(.subheadline.bold())
                 Spacer()
-                Button("Kopiraj") {
+                Button(L.t("Copy")) {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(logText, forType: .string)
                 }
                 .buttonStyle(.link)
                 .disabled(store.todaysLog.isEmpty)
-                .help("Kopiraj cel dnevnik na odložišče")
-                Button("Nazaj") { showLog = false }.buttonStyle(.link)
+                .help(L.t("Copy today's log to the clipboard"))
+                Button(L.t("Back")) { showLog = false }.buttonStyle(.link)
             }
+            .focusEffectDisabled()
             ScrollView {
-                Text(logText.isEmpty ? "Danes še ni preklopov." : logText)
+                Text(logText.isEmpty ? L.t("No switches yet today.") : logText)
                     .font(.caption)
                     .monospacedDigit()
                     .textSelection(.enabled)
@@ -146,6 +179,7 @@ struct PanelView: View {
 
 struct FocusRow: View {
     @ObservedObject var store: FocusStore
+    @ObservedObject var settings: AppSettings
     let focus: Focus
     @State private var editingNote = false
     @State private var note = ""
@@ -162,28 +196,33 @@ struct FocusRow: View {
                     .lineLimit(1)
                     .fontWeight(isActive ? .semibold : .regular)
                 Spacer()
-                if hovering {
-                    // Quick actions; the same ones live in the context menu
+                Text(formatDuration(store.seconds(for: focus)))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                // Quick actions, always laid out so the row does not jump; visible on hover only.
+                // The same actions live in the context menu.
+                HStack(spacing: 4) {
                     Button { store.markDone(focus.id) } label: {
                         Image(systemName: "checkmark.circle")
                     }
-                    .buttonStyle(.borderless)
-                    .help("Končano (umakne s seznama, čas ostane v dnevniku)")
+                    .accessibilityLabel(L.t("Done"))
+                    .help(L.t("Done (removes from the list, time stays in the log)"))
                     Button { store.delete(focus.id) } label: {
                         Image(systemName: "trash")
                     }
-                    .buttonStyle(.borderless)
-                    .help("Izbriši")
-                } else {
-                    Text(formatDuration(store.seconds(for: focus)))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
+                    .accessibilityLabel(L.t("Delete"))
+                    .help(L.t("Delete"))
                 }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
+                .focusEffectDisabled()
+                .opacity(hovering ? 1 : 0)
+                .accessibilityHidden(!hovering)
             }
 
             if editingNote {
-                TextField("Kje sem ostal?", text: $note)
+                TextField(L.t("Where did I leave off?"), text: $note)
                     .textFieldStyle(.roundedBorder)
                     .font(.caption)
                     .onSubmit {
@@ -216,22 +255,22 @@ struct FocusRow: View {
         .onTapGesture { store.switchTo(focus.id) }
         .onHover { hovering = $0 }
         .contextMenu {
-            Button("Opomba: kje sem ostal ...") {
+            Button(L.t("Note: where did I leave off ...")) {
                 note = focus.note
                 editingNote = true
             }
-            Menu("Barva") {
+            Menu(L.t("Color")) {
                 ForEach(Array(FocusPalette.colors.enumerated()), id: \.offset) { i, c in
                     Button {
                         store.setColor(focus.id, i)
                     } label: {
-                        Text((i == focus.colorIndex ? "✓ " : "") + c.name)
+                        Text((i == focus.colorIndex ? "✓ " : "") + L.t(c.name))
                     }
                 }
             }
-            Button("Končano") { store.markDone(focus.id) }
+            Button(L.t("Done")) { store.markDone(focus.id) }
             Divider()
-            Button("Izbriši", role: .destructive) { store.delete(focus.id) }
+            Button(L.t("Delete"), role: .destructive) { store.delete(focus.id) }
         }
     }
 }
