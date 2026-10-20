@@ -98,6 +98,9 @@ struct SettingsView: View {
                          DoNotDisturb.onShortcut, DoNotDisturb.offShortcut))
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                Text(L.t("Fastest: run scripts/make-dnd-shortcuts.sh from the repo and click \"Add Shortcut\" twice."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 Button(L.t("Open Shortcuts")) {
                     NSWorkspace.shared.open(URL(string: "shortcuts://")!)
                 }

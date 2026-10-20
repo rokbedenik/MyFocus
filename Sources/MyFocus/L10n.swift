@@ -88,6 +88,8 @@ enum L {
         "Turned off on pause, screen lock, sleep and quit. macOS has no API for Focus modes, so this needs two shortcuts in the Shortcuts app, named exactly \"%@\" and \"%@\", each with a single \"Set Focus\" action (Do Not Disturb → On / Off).":
             "Izklopi se ob pavzi, zaklepu zaslona, spanju in izhodu. macOS nima API-ja za načine Focus, zato sta potrebni dve bližnjici v aplikaciji Shortcuts (Bližnjice), poimenovani točno \"%@\" in \"%@\", vsaka z enim dejanjem \"Set Focus\" (Do Not Disturb → On / Off).",
         "Open Shortcuts": "Odpri Shortcuts",
+        "Fastest: run scripts/make-dnd-shortcuts.sh from the repo and click \"Add Shortcut\" twice.":
+            "Najhitreje: v repu poženi scripts/make-dnd-shortcuts.sh in dvakrat klikni \"Add Shortcut\".",
         "Shortcuts": "Bližnjice",
         "Show/hide window": "Pokaži/skrij okno",
         "New focus": "Nov fokus",

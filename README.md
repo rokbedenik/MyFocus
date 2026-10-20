@@ -113,7 +113,17 @@ Optional VS Code task (`.vscode/tasks.json`) so ⌘⇧B does step 3:
 ### Do Not Disturb setup
 
 macOS has no public API for Focus modes, so the app runs two shortcuts through the `shortcuts` command line tool.
-Create them once in the **Shortcuts** app (Settings → Do Not Disturb → "Open Shortcuts"):
+The CLI cannot *create* shortcuts, but it can sign and import prepared ones. One-time setup:
+
+```sh
+scripts/make-dnd-shortcuts.sh
+```
+
+This writes the two `.shortcut` files with the "Set Focus" action pre-configured, signs them and opens them;
+Shortcuts shows an import dialog for each — click **Add Shortcut**. Check with `shortcuts list | grep "MyFocus DND"`.
+
+If you prefer to build them by hand (or the imported action shows up unconfigured), create them in the
+**Shortcuts** app (Settings → Do Not Disturb → "Open Shortcuts"):
 
 | Shortcut name (exact) | Action |
 |---|---|
@@ -147,6 +157,7 @@ Resources/AppIcon.icns        app icon (generated, committed)
 release/MyFocus.zip           prebuilt app (refresh with scripts/build-app.sh release)
 scripts/build-app.sh          build + package .app + ad-hoc sign (+ install / release)
 scripts/make-icon.swift       regenerates AppIcon.icns from the "scope" SF Symbol
+scripts/make-dnd-shortcuts.sh creates + imports the two DND shortcuts
 ```
 
 ## App icon
