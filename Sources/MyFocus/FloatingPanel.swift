@@ -169,6 +169,7 @@ final class FloatingPanel: NSPanel {
         setFrameOrigin(NSPoint(x: vf.minX + 16, y: vf.maxY - frame.height - 16))
     }
 
+    // The user moved the window: the new top edge becomes the anchor
     private func rememberPosition() {
         guard isPositionRestored else { return }
         // The top edge is always the anchor: the window grows downward and the header never moves
@@ -176,14 +177,21 @@ final class FloatingPanel: NSPanel {
         anchoredTop = frame.maxY
         anchoredBottom = frame.minY
         lastSize = frame.size
+        persistPosition()
+    }
+
+    // Saves the anchor, not the current frame: a window pushed away from the screen edge to make room for
+    // more rows must come back to its place once it shrinks again
+    private func persistPosition() {
         var positions = UserDefaults.standard.dictionary(forKey: Self.positionsKey) as? [String: [Double]] ?? [:]
-        positions[Self.arrangementKey] = [frame.minX, frame.minY, frame.maxY, anchorTop ? 1.0 : 0.0]
+        positions[Self.arrangementKey] = [frame.minX, anchoredTop - frame.height, anchoredTop, anchorTop ? 1.0 : 0.0]
         UserDefaults.standard.set(positions, forKey: Self.positionsKey)
         // The app may be killed (reinstall) right after a move; do not leave the write pending
         UserDefaults.standard.synchronize()
     }
 
-    // After a content-driven resize put the anchored edge back where it was, whichever edge AppKit kept
+    // After a content-driven resize put the anchored edge back where it was; near the bottom of the screen the
+    // window is pushed up only as far as needed and the anchor stays untouched
     private func keepAnchored() {
         guard isPositionRestored else { return }
         var y = anchorTop ? anchoredTop - frame.height : anchoredBottom
@@ -194,7 +202,7 @@ final class FloatingPanel: NSPanel {
             setFrameOrigin(NSPoint(x: frame.minX, y: y))
         }
         lastSize = frame.size
-        rememberPosition()
+        persistPosition()
     }
 }
 
