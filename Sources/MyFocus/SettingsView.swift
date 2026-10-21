@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 
 enum SettingsPage: String, CaseIterable, Identifiable {
-    case general, templates, shortcuts, behavior, sync
+    case general, templates, shortcuts, behavior, sync, about
     var id: String { rawValue }
 
     // L10n keys
@@ -13,6 +13,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
         case .behavior: return "Behavior"
         case .templates: return "Templates"
         case .sync: return "Sync"
+        case .about: return "About"
         }
     }
 
@@ -23,6 +24,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
         case .behavior: return "bell.badge"
         case .templates: return "square.on.square"
         case .sync: return "arrow.triangle.2.circlepath.icloud"
+        case .about: return "heart"
         }
     }
 }
@@ -202,12 +204,57 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                     }
+
+                case .about:
+                    Form {
+                    Section {
+                        HStack(spacing: 12) {
+                            Image(nsImage: NSApp.applicationIconImage)
+                                .resizable()
+                                .frame(width: 48, height: 48)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("MyFocus").font(.title3.weight(.semibold))
+                                Text(L.t("Version %@", Self.version))
+                                    .foregroundStyle(.secondary)
+                                Text(L.t("Free to use. The source is published for transparency."))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    Section(L.t("Support the development")) {
+                        Text(L.t("MyFocus is free and stays free. If it helps you, a small donation is welcome."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Button {
+                            NSWorkspace.shared.open(Self.donateURL)
+                        } label: {
+                            Label(L.t("Buy me a coffee (PayPal)"), systemImage: "cup.and.saucer.fill")
+                        }
+                    }
+                    Section(L.t("Links")) {
+                        Button {
+                            NSWorkspace.shared.open(Self.repoURL)
+                        } label: {
+                            Label(L.t("Source code and issues on GitHub"), systemImage: "chevron.left.forwardslash.chevron.right")
+                        }
+                        Text(L.t("Copyright © 2026 Rok Bedenik. All rights reserved."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    }
                 }
             }
             .formStyle(.grouped)
             .frame(width: 480)
         }
         .frame(height: 560)
+    }
+
+    static let donateURL = URL(string: "https://paypal.me/RokBedenik")!
+    static let repoURL = URL(string: "https://github.com/rokbedenik/MyFocus")!
+    private static var version: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
     }
 
     private func shortcutRow(_ title: String, _ binding: Binding<KeyShortcut?>) -> some View {

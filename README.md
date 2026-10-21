@@ -278,7 +278,8 @@ macOS caches icons aggressively; after replacing the app in `/Applications` you 
 ## Support
 
 MyFocus is free and will stay free. If you like it, a small donation keeps the developer caffeinated:
-**https://paypal.me/RokBedenik** (also behind the "Sponsor" button at the top of the repository page).
+**https://paypal.me/RokBedenik** (also behind the "Sponsor" button at the top of the repository page and in
+Settings → About).
 
 ## License
 
