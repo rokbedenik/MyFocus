@@ -87,9 +87,11 @@ enum L {
         "minutes (0 = off)": "minutah (0 = izklopljeno)",
         "Language": "Jezik",
         "Window": "Okno",
-        "Show only the active focus while the mouse is away": "Ko miška ni nad oknom, pokaži samo aktivni fokus",
-        "Hovering the window shows all focuses; while paused the last active one stays visible.":
-            "Prehod z miško pokaže vse fokuse; med pavzo ostane viden zadnji aktivni.",
+        "Show only the active focus until the window is clicked": "Pokaži samo aktivni fokus, dokler okna ne klikneš",
+        "A click on the row or the chevron shows all focuses; they fold away again once the mouse leaves. While paused the last active one stays visible.":
+            "Klik na vrstico ali puščico pokaže vse fokuse; ko miška zapusti okno, se spet skrijejo. Med pavzo ostane viden zadnji aktivni.",
+        "Show all focuses": "Pokaži vse fokuse",
+        "Show only the active focus": "Pokaži samo aktivni fokus",
         "While paused, dim the window after": "Med pavzo zatemni okno po",
         "seconds (0 = never)": "sekundah (0 = nikoli)",
         "Only while no focus is running. The window fades when the mouse is not over it and comes back on hover, when a focus starts, or when a nudge is due.":

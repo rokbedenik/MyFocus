@@ -28,8 +28,9 @@ struct PanelView: View {
     @State private var adding = false
     @State private var newTitle = ""
     @State private var editingNoteID: UUID?
-    @State private var hovering = false
-    @State private var hoverTask: Task<Void, Never>?
+    // Expanded by a click; collapses again once the mouse has left the window
+    @State private var expanded = false
+    @State private var collapseTask: Task<Void, Never>?
     @FocusState private var inputFocused: Bool
 
     private var s: CGFloat { settings.uiScale }
@@ -37,7 +38,7 @@ struct PanelView: View {
 
     // Collapsed: only the active (or last active) focus is listed
     private var collapsed: Bool {
-        settings.collapseWhenIdle && !hovering && !commands.panelIsKey && !adding && editingNoteID == nil
+        settings.collapseWhenIdle && !expanded && !commands.panelIsKey && !adding && editingNoteID == nil
     }
 
     private var shownID: UUID? { store.state.activeID ?? store.state.lastActiveID }
@@ -63,6 +64,8 @@ struct PanelView: View {
                 VStack(spacing: 2 * s) {
                     ForEach(visibleFocuses) { f in
                         FocusRow(store: store, settings: settings, focus: f, editingNoteID: $editingNoteID)
+                            // Clicking the only visible row while collapsed shows the rest
+                            .simultaneousGesture(TapGesture().onEnded { if collapsed { expanded = true } })
                     }
                     if !hiddenFocuses.isEmpty {
                         HStack(spacing: 6 * s) {
@@ -94,11 +97,12 @@ struct PanelView: View {
         }
         .animation(.easeInOut(duration: 0.15), value: collapsed)
         .onHover { inside in
-            hoverTask?.cancel()
-            // A passing mouse does not expand the list; leaving gets a short grace period
-            hoverTask = Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(inside ? 250 : 500))
-                if !Task.isCancelled { hovering = inside }
+            collapseTask?.cancel()
+            guard !inside, expanded else { return }
+            // Collapse shortly after the mouse leaves; hovering alone never expands
+            collapseTask = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(500))
+                if !Task.isCancelled { expanded = false }
             }
         }
         .padding(12 * s)
@@ -153,6 +157,15 @@ struct PanelView: View {
             .overlay(DragHandle(onContextMenu: commands.contextMenu))
             .help(L.t("Drag to move the window, right-click for the menu"))
 
+            if settings.collapseWhenIdle && store.focuses.count > 1 {
+                Button { expanded.toggle() } label: {
+                    Image(systemName: collapsed ? "chevron.down.circle" : "chevron.up.circle")
+                        .font(.ui(15, s))
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(collapsed ? L.t("Show all focuses") : L.t("Show only the active focus"))
+                .help(collapsed ? L.t("Show all focuses") : L.t("Show only the active focus"))
+            }
             Button { store.pause() } label: {
                 Image(systemName: "pause.circle.fill")
                     .font(.ui(15, s))
