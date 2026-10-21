@@ -8,6 +8,9 @@ Swift + SwiftUI/AppKit, no Xcode. Edit in VS Code, build with a script.
 
 Repo: https://github.com/rokbedenik/MyFocus
 
+Free to use. The source is published for transparency, not as open source; see [License](#license).
+If MyFocus is useful to you, you can [buy me a coffee via PayPal](https://paypal.me/RokBedenik).
+
 ## Screenshots
 
 <p>
@@ -271,6 +274,20 @@ swiftc -sdk /Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk scripts/make
 
 macOS caches icons aggressively; after replacing the app in `/Applications` you may need to run
 `killall Finder Dock` or log out to see the new icon.
+
+## Support
+
+MyFocus is free and will stay free. If you like it, a small donation keeps the developer caffeinated:
+**https://paypal.me/RokBedenik** (also behind the "Sponsor" button at the top of the repository page).
+
+## License
+
+Source-available freeware, see [LICENSE](LICENSE). In short:
+
+- Use the app for free, privately or at work, on as many Macs as you like.
+- Read the code, build it for yourself, report bugs, propose fixes.
+- Do not redistribute the code or your builds, publish forks, or reuse parts of it in other software without
+  permission. All rights reserved by Rok Bedenik.
 
 ## Ideas for later
 
