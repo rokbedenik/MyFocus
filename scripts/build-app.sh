@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Builds MyFocus.app into ./dist with swiftc (no Xcode; SwiftPM is only used by the editor).
-#   scripts/build-app.sh            release build -> dist/MyFocus.app
+# Builds MyFocus.app into ./build.noindex/dist with swiftc (no Xcode; SwiftPM is only used by the editor).
+# The ".noindex" suffix keeps Spotlight from listing the build copy next to the installed app.
+#   scripts/build-app.sh            release build -> build.noindex/dist/MyFocus.app
 #   scripts/build-app.sh debug      debug build
 #   scripts/build-app.sh install    release build, then copy to /Applications and launch it
 #   scripts/build-app.sh release    release build + zip to release/MyFocus.zip (the prebuilt app in the repo)
@@ -18,7 +19,8 @@ for arg in "$@"; do
         *) echo "Unknown argument: $arg" >&2; exit 2 ;;
     esac
 done
-APP="dist/MyFocus.app"
+BUILD="build.noindex"
+APP="$BUILD/dist/MyFocus.app"
 
 # Command Line Tools ship an SDK newer than the compiler can read; pick the newest one that works.
 # Override with: SDKROOT=/path/to/sdk scripts/build-app.sh
@@ -31,16 +33,16 @@ echo "Using SDK: ${SDKROOT}"
 
 OPT="-O"
 [[ "$CONFIG" == "debug" ]] && OPT="-Onone -g"
-mkdir -p build
+mkdir -p "$BUILD"
 echo "Compiling ($CONFIG)"
 swiftc $OPT -sdk "$SDKROOT" -target arm64-apple-macosx14.0 \
-    -module-cache-path build/module-cache -module-name MyFocus \
-    Sources/MyFocus/*.swift -o build/MyFocus
+    -module-cache-path "$BUILD/module-cache" -module-name MyFocus \
+    Sources/MyFocus/*.swift -o "$BUILD/MyFocus"
 
 echo "Packaging $APP"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp build/MyFocus "$APP/Contents/MacOS/MyFocus"
+cp "$BUILD/MyFocus" "$APP/Contents/MacOS/MyFocus"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 

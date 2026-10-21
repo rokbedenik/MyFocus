@@ -26,14 +26,15 @@ A ready-to-run build is in the repo: [`release/MyFocus.zip`](release/MyFocus.zip
 Requirements: macOS 14+, Xcode Command Line Tools (`xcode-select --install`). No Xcode, no SwiftPM build.
 
 ```sh
-scripts/build-app.sh            # release build -> dist/MyFocus.app
+scripts/build-app.sh            # release build -> build.noindex/dist/MyFocus.app
 scripts/build-app.sh debug      # debug build (-Onone -g)
 scripts/build-app.sh install    # build, replace /Applications/MyFocus.app, relaunch
 scripts/build-app.sh release    # build + refresh release/MyFocus.zip
 ```
 
 The script compiles `Sources/MyFocus/*.swift` with `swiftc`, assembles the `.app` bundle, copies the icon and
-`Info.plist`, and ad-hoc signs it.
+`Info.plist`, and ad-hoc signs it. Output goes to `build.noindex/` so Spotlight does not list the build copy next
+to the installed app.
 
 Note: the Command Line Tools currently ship SDK 27.0, which the bundled compiler cannot read (version mismatch).
 The script therefore defaults to SDK 26.5. Once Apple fixes the CLT you can remove that part of
