@@ -213,6 +213,9 @@ struct FocusRow: View {
     let focus: Focus
     @Binding var editingNoteID: UUID?
     @State private var note = ""
+    @State private var editingTitle = false
+    @State private var title = ""
+    @FocusState private var titleFocused: Bool
     @State private var hovering = false
     @FocusState private var noteFocused: Bool
 
@@ -226,9 +229,24 @@ struct FocusRow: View {
                 Image(systemName: isActive ? "largecircle.fill.circle" : "circle.fill")
                     .font(.ui(13, s))
                     .foregroundStyle(focus.color)
-                Text(focus.title)
-                    .font(.ui(13, s, weight: isActive ? .semibold : .regular))
-                    .lineLimit(1)
+                if editingTitle {
+                    TextField("", text: $title)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.ui(13, s))
+                        .focused($titleFocused)
+                        .onSubmit {
+                            store.update(focus.id, title: title)
+                            editingTitle = false
+                        }
+                        .onExitCommand { editingTitle = false }
+                } else {
+                    Text(focus.title)
+                        .font(.ui(13, s, weight: isActive ? .semibold : .regular))
+                        .lineLimit(1)
+                        // Double-click renames; the row's single click (switch) still fires on the first click
+                        .simultaneousGesture(TapGesture(count: 2).onEnded { startRenaming() })
+                        .help(L.t("Double-click to rename"))
+                }
                 Spacer()
                 Text(formatDuration(store.seconds(for: focus)))
                     .font(.ui(10, s))
@@ -302,6 +320,7 @@ struct FocusRow: View {
             }
         }
         .contextMenu {
+            Button(L.t("Rename …")) { startRenaming() }
             Button(L.t("Note: where did I leave off ...")) { startEditingNote() }
             Menu(L.t("Color")) {
                 ForEach(Array(FocusPalette.colors.enumerated()), id: \.offset) { i, c in
@@ -316,6 +335,13 @@ struct FocusRow: View {
             Divider()
             Button(L.t("Delete"), role: .destructive) { store.delete(focus.id) }
         }
+    }
+
+    private func startRenaming() {
+        title = focus.title
+        editingTitle = true
+        // The field must exist before it can take focus
+        DispatchQueue.main.async { titleFocused = true }
     }
 
     private func startEditingNote() {

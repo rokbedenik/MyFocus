@@ -50,6 +50,8 @@ enum L {
         "Where did I leave off?": "Kje sem ostal?",
         "Note: where did I leave off ...": "Opomba: kje sem ostal ...",
         "Color": "Barva",
+        "Rename …": "Preimenuj …",
+        "Double-click to rename": "Dvojni klik za preimenovanje",
         "Done": "Končano",
         "Still working on this?": "Še vedno delaš na tem?",
         "Yes": "Da",

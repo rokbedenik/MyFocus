@@ -82,7 +82,8 @@ Optional VS Code task (`.vscode/tasks.json`) so ⌘⇧B does step 3:
 - The header shows the state: a colored dot + "Working · 12 min", or a pause icon. The ⏸ button pauses, **+** adds
   a focus (type, Enter; Esc cancels). At most 3 focuses by default, configurable 1–50 in Settings.
 - Each focus has its own color (assigned automatically, change it via right-click → Color).
-- All focuses are always visible; click a row to switch, the active one has a tinted background.
+- All focuses are always visible; click a row to switch, the active one has a tinted background. Double-click the
+  name (or right-click → Rename) to rename it.
 - Hovering a row shows 💬 (note: where did I leave off), ✓ (done) and 🗑 (delete). The same actions are in the
   right-click menu. Delete/done can be undone from the menu bar.
 - **Global shortcuts** (Settings → Shortcuts): show/hide window (default ⌃⌥F), new focus (off by default) and
