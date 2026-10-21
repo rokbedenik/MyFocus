@@ -214,7 +214,7 @@ struct SettingsView: View {
                                 .frame(width: 48, height: 48)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("MyFocus").font(.title3.weight(.semibold))
-                                Text(L.t("Version %@", Self.version))
+                                Text(L.t("Version %@", AppVersion.display))
                                     .foregroundStyle(.secondary)
                                 Text(L.t("Free to use. The source is published for transparency."))
                                     .font(.caption)
@@ -253,10 +253,6 @@ struct SettingsView: View {
 
     static let donateURL = URL(string: "https://paypal.me/RokBedenik")!
     static let repoURL = URL(string: "https://github.com/rokbedenik/MyFocus")!
-    private static var version: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
-    }
-
     private func shortcutRow(_ title: String, _ binding: Binding<KeyShortcut?>) -> some View {
         HStack {
             Text(title)

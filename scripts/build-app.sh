@@ -44,6 +44,12 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BUILD/MyFocus" "$APP/Contents/MacOS/MyFocus"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+# Version from Sources/MyFocus/Version.swift, build number = commit count (0 outside git)
+VERSION=$(sed -n 's/.*static let current = "\([^"]*\)".*/\1/p' Sources/MyFocus/Version.swift)
+BUILD_NUMBER=$(git rev-list --count HEAD 2>/dev/null || echo 0)
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$APP/Contents/Info.plist"
+echo "Version $VERSION (build $BUILD_NUMBER)"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 
 # Ad-hoc signature is enough to run locally

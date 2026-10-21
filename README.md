@@ -104,6 +104,10 @@ The script therefore defaults to SDK 26.5. Once Apple fixes the CLT you can remo
 3. `scripts/build-app.sh install` – compiles, replaces the installed app and relaunches it. Compile errors are
    printed; nothing is replaced if the build fails.
 4. When you want to ship the result: `scripts/build-app.sh release`, then commit `release/MyFocus.zip` with the code.
+5. Versioning: bump `AppVersion.current` in `Sources/MyFocus/Version.swift` (format `0.4.00`), add a line to
+   `CHANGELOG.md`, build the release zip, commit and tag: `git tag v0.4.00 && git push --tags`. The build script
+   copies the version into `Info.plist` and uses the git commit count as the build number; Settings → About shows
+   both.
 
 Optional VS Code task (`.vscode/tasks.json`) so ⌘⇧B does step 3:
 
@@ -232,6 +236,7 @@ you enable the calendar feature.
 Package.swift                 SwiftPM manifest (for the VS Code Swift extension only)
 Sources/MyFocus/
   main.swift                  entry point, AppDelegate, menu bar, hotkey, lock/sleep observers
+  Version.swift               AppVersion.current (single source of truth for the version)
   FloatingPanel.swift         NSPanel (floating, non-activating, auto-sized, top-anchored, position memory, idle dimming)
   PanelView.swift             SwiftUI content of the panel
   FocusStore.swift            state, switching, timing, undo, nudge, JSON persistence
