@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleName</key>
-    <string>My Focus</string>
+    <string>MyFocus</string>
     <key>CFBundleDisplayName</key>
-    <string>My Focus</string>
+    <string>MyFocus</string>
     <key>CFBundleIdentifier</key>
     <string>com.rbedenik.myfocus</string>
     <key>CFBundleExecutable</key>
@@ -21,7 +21,7 @@
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>NSCalendarsFullAccessUsageDescription</key>
-    <string>My Focus can suggest a focus when a calendar event starts. Calendar data never leaves your Mac.</string>
+    <string>MyFocus can suggest a focus when a calendar event starts. Calendar data never leaves your Mac.</string>
     <key>LSUIElement</key>
     <true/>
     <key>NSHighResolutionCapable</key>

@@ -69,7 +69,7 @@ if [[ "$INSTALL" == "1" ]]; then
     rm -rf "$TARGET"
     cp -R "$APP" "$TARGET"
     open "$TARGET"
-    echo "Installed and launched. Find it in Spotlight / Launchpad as 'My Focus'."
+    echo "Installed and launched. Find it in Spotlight / Launchpad as 'MyFocus'."
 elif [[ "$ZIP" == "0" ]]; then
     echo "Run with: open $APP"
 fi

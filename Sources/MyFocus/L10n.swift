@@ -78,9 +78,9 @@ enum L {
         "Undo: %@": "Razveljavi: %@",
         "Launch at login": "Zaženi ob prijavi",
         "Settings …": "Nastavitve …",
-        "Quit My Focus": "Zapri My Focus",
+        "Quit MyFocus": "Zapri MyFocus",
         // Settings
-        "My Focus – Settings": "My Focus – nastavitve",
+        "MyFocus – Settings": "MyFocus – nastavitve",
         "Focuses": "Fokusi",
         "Maximum focuses at once": "Največ fokusov hkrati",
         "Allowed %d–%d. If the limit is below the number of open focuses, existing ones stay but you cannot add new ones.":
@@ -138,7 +138,7 @@ enum L {
             "state.json se preseli v to mapo; na drugem Macu uporabi isto mapo. Zmaga zadnji Mac, ki zapiše, zato ne poganjaj fokusa na obeh hkrati. Pri iCloud Drive naj mapa ostane prenesena (izklopi \"Optimize Mac Storage\" ali označi \"Keep Downloaded\").",
         "Off": "Izklopljeno",
         "Show/hide window (%@)": "Pokaži/skrij okno (%@)",
-        "My Focus – Log": "My Focus – dnevnik",
+        "MyFocus – Log": "MyFocus – dnevnik",
         "Durations use min and h in both languages.": "Trajanja uporabljajo min in h v obeh jezikih.",
     ]
 }

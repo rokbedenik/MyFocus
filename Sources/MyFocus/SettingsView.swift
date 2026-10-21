@@ -259,7 +259,7 @@ final class SettingsWindowController {
             w.setFrameAutosaveName("MyFocusSettings")
             window = w
         }
-        window?.title = L.t("My Focus – Settings")
+        window?.title = L.t("MyFocus – Settings")
         // Accessory app: bring ourselves forward so the window actually shows on top
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)

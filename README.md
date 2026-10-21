@@ -1,4 +1,4 @@
-# My Focus
+# MyFocus
 
 A small macOS app: an always-on-top window that shows what you are working on right now.
 Several focuses, switching between them, time per focus, a "where did I leave off" note, a switch log,
@@ -62,7 +62,7 @@ A ready-to-run build is in the repo: [`release/MyFocus.zip`](release/MyFocus.zip
    ```sh
    xattr -dr com.apple.quarantine /Applications/MyFocus.app
    ```
-3. Launch it from Spotlight or Launchpad as "My Focus". It lives in the menu bar (no Dock icon). For autostart,
+3. Launch it from Spotlight or Launchpad as "MyFocus". It lives in the menu bar (no Dock icon). For autostart,
    enable "Launch at login" in the menu bar menu.
 
 ## Build from source
@@ -109,7 +109,7 @@ Optional VS Code task (`.vscode/tasks.json`) so ⌘⇧B does step 3:
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build & install My Focus",
+      "label": "Build & install MyFocus",
       "type": "shell",
       "command": "scripts/build-app.sh install",
       "group": { "kind": "build", "isDefault": true },
@@ -189,7 +189,7 @@ If you prefer to build them by hand, create them in the **Shortcuts** app (Setti
 | `MyFocus DND Off` | Set Focus → Do Not Disturb → **Off** |
 
 Then enable "Turn on Do Not Disturb while a focus is running" in Settings. The first run may ask you to allow
-My Focus to run shortcuts. Failures are logged to the system log (`log stream --predicate 'process == "MyFocus"'`).
+MyFocus to run shortcuts. Failures are logged to the system log (`log stream --predicate 'process == "MyFocus"'`).
 
 ## Uninstall
 
@@ -210,7 +210,7 @@ The two DND shortcuts (if you created them) stay in the Shortcuts app; delete th
 |---|---|
 | "MyFocus is damaged" or "cannot be opened" on first launch | Quarantine flag on the downloaded zip: `xattr -dr com.apple.quarantine /Applications/MyFocus.app`, or right-click → Open. |
 | DND does not switch | Check `shortcuts list \| grep "MyFocus DND"`; the names must match exactly. Run `shortcuts run "MyFocus DND On"` in Terminal once to grant permissions. |
-| Calendar suggestions never appear | Calendar access was denied: System Settings → Privacy & Security → Calendars → My Focus. Declined and all-day events are ignored. |
+| Calendar suggestions never appear | Calendar access was denied: System Settings → Privacy & Security → Calendars → MyFocus. Declined and all-day events are ignored. |
 | Global shortcut does nothing | Another app owns the combination; pick a different one in Settings → Shortcuts. |
 | Window is off-screen after changing displays | Position is per display arrangement; `defaults delete com.rbedenik.myfocus panelPositions` resets it to the top-left corner. |
 | Second Mac shows old data | Sync folder not downloaded (iCloud "Optimize Mac Storage"), or both Macs ran a focus at once (last writer wins). |

@@ -56,7 +56,7 @@ final class LogWindowController {
             w.center()
             window = w
         }
-        window?.title = L.t("My Focus – Log")
+        window?.title = L.t("MyFocus – Log")
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
     }

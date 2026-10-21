@@ -117,7 +117,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem.button?.image = NSImage(systemSymbolName: "scope", accessibilityDescription: "My Focus")
+        statusItem.button?.image = NSImage(systemSymbolName: "scope", accessibilityDescription: "MyFocus")
         statusItem.button?.imagePosition = .imageLeading
         rebuildMenu()
     }
@@ -178,7 +178,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(withTitle: L.t("Settings …"), action: #selector(showSettings), keyEquivalent: ",").target = self
 
         menu.addItem(.separator())
-        menu.addItem(withTitle: L.t("Quit My Focus"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.addItem(withTitle: L.t("Quit MyFocus"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         return menu
     }
 

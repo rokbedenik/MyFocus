@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Creates the two Shortcuts that My Focus uses to toggle Do Not Disturb:
+# Creates the two Shortcuts that MyFocus uses to toggle Do Not Disturb:
 #   "MyFocus DND On"  = Set Focus -> Do Not Disturb -> On (until turned off)
 #   "MyFocus DND Off" = Set Focus -> Do Not Disturb -> Off
 # The `shortcuts` CLI cannot create shortcuts, so this writes .shortcut files, signs them
