@@ -40,7 +40,14 @@ struct PanelView: View {
         settings.collapseWhenIdle && !expanded && !adding && editingNoteID == nil
     }
 
-    private var shownID: UUID? { store.state.activeID ?? store.state.lastActiveID }
+    // The row kept visible while collapsed: active, else the last active, else the first one
+    // (the last active focus may have just been finished)
+    private var shownID: UUID? {
+        let ids = store.focuses.map(\.id)
+        if let a = store.state.activeID, ids.contains(a) { return a }
+        if let l = store.state.lastActiveID, ids.contains(l) { return l }
+        return ids.first
+    }
 
     private var visibleFocuses: [Focus] {
         guard collapsed else { return store.focuses }
