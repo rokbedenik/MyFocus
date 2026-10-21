@@ -79,16 +79,15 @@ Optional VS Code task (`.vscode/tasks.json`) so ⌘⇧B does step 3:
 
 - The window stays on top, on all Spaces, and never steals focus. Drag it by the handle (≡) in the header.
   Its height follows the number of focuses. The position is remembered across launches; the default is the
-  bottom-left corner. Hide and show it with ⌃⌥F or from the menu bar.
+  top-left corner. Hide and show it with ⌃⌥F or from the menu bar.
 - The header shows the state: a colored dot + "Working · 12 min", or a pause icon. The ⏸ button pauses, **+** adds
   a focus (type, Enter; Esc cancels). At most 3 focuses by default, configurable 1–50 in Settings.
 - Each focus has its own color (assigned automatically, change it via right-click → Color).
 - While the mouse is away the panel shows only the active focus (or the last active one while paused); the other
   focuses shrink to colored dots that you can click to switch. Resting the mouse on the panel for a moment shows
-  all rows (Settings → Behavior → Window to turn this off). The header with the drag handle and the + button sits
-  on the edge the window is anchored to (bottom when the window is near the bottom of the screen, top otherwise),
-  so the controls stay put while the list grows. Click a row to switch, the active one has a tinted background.
-  Double-click the name (or right-click → Rename) to rename it.
+  all rows (Settings → Behavior → Window to turn this off). The window is anchored at its top edge and grows
+  downward, so the header with the drag handle and the + button never moves. Click a row to switch, the active one
+  has a tinted background. Double-click the name (or right-click → Rename) to rename it.
 - Hovering a row shows 💬 (note: where did I leave off) and ✓ (done: removes the focus from the list, its time stays
   in the log). Right-click offers the same plus Rename, Color, Save as template and Delete. Delete/done can be
   undone from the menu bar.
@@ -149,7 +148,7 @@ My Focus to run shortcuts. Failures are logged to the system log (`log stream --
 Package.swift                 SwiftPM manifest (for the VS Code Swift extension only)
 Sources/MyFocus/
   main.swift                  entry point, AppDelegate, menu bar, hotkey, lock/sleep observers
-  FloatingPanel.swift         NSPanel (floating, non-activating, animated fit to content, position memory, idle dimming)
+  FloatingPanel.swift         NSPanel (floating, non-activating, auto-sized, top-anchored, position memory, idle dimming)
   PanelView.swift             SwiftUI content of the panel
   FocusStore.swift            state, switching, timing, undo, nudge, JSON persistence
   Model.swift                 Focus, SwitchEvent, AppState, color palette
