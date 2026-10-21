@@ -69,6 +69,7 @@ struct PanelView: View {
                 Color.clear.preference(key: PanelSizeKey.self, value: geo.size)
             })
             .onPreferenceChange(PanelSizeKey.self) { size in
+                if FloatingPanel.debug { NSLog("preference size=%@", NSStringFromSize(size)) }
                 commands.onContentSize?(size)
             }
             // While the window animates to the new size the card stays glued to the anchored edge

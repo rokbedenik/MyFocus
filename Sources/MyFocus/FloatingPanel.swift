@@ -54,6 +54,7 @@ final class FloatingPanel: NSPanel {
         // SwiftUI invalidates the intrinsic size whenever the content's ideal size changes
         hosting.onContentSizeChange = { [weak self, weak hosting] in
             guard let self, let hosting else { return }
+            if Self.debug { NSLog("hosting fittingSize=%@ bounds=%@", NSStringFromSize(hosting.fittingSize), NSStringFromRect(hosting.bounds)) }
             self.fit(to: hosting.fittingSize)
         }
         hosting.addTrackingArea(NSTrackingArea(
@@ -108,7 +109,14 @@ final class FloatingPanel: NSPanel {
     // MARK: - Size follows content
 
     // Called whenever the SwiftUI content changes size; animates the frame, anchored edge fixed
+    static let debug = ProcessInfo.processInfo.environment["MYFOCUS_DEBUG"] != nil
+
     func fit(to size: CGSize) {
+        if Self.debug {
+            NSLog("fit requested=%@ frame=%@ visible=%d restored=%d anchorTop=%d top=%.0f bottom=%.0f",
+                  NSStringFromSize(size), NSStringFromRect(frame), isVisible ? 1 : 0, isPositionRestored ? 1 : 0,
+                  anchorTop ? 1 : 0, anchoredTop, anchoredBottom)
+        }
         guard size.width > 1, size.height > 1 else { return }
         let w = ceil(size.width), h = ceil(size.height)
         guard abs(frame.width - w) > 0.5 || abs(frame.height - h) > 0.5 else { return }
@@ -139,6 +147,7 @@ final class FloatingPanel: NSPanel {
             Task { @MainActor in
                 guard let self else { return }
                 self.fitting = false
+                if Self.debug { NSLog("fit done frame=%@", NSStringFromRect(self.frame)) }
                 self.savePosition()
             }
         })
