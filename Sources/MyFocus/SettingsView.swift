@@ -132,7 +132,7 @@ struct SettingsView: View {
                             Text(L.t("seconds (0 = never)"))
                                 .foregroundStyle(.secondary)
                         }
-                        Text(L.t("Only while no focus is running. The window fades when the mouse is not over it and comes back on hover, when a focus starts, or when a nudge is due."))
+                        Text(L.t("Only while no focus is running. The window fades when the mouse is not over it and comes back on a click, when a focus starts, or when a nudge is due."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

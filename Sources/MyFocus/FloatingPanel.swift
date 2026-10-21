@@ -17,7 +17,7 @@ final class FloatingPanel: NSPanel {
     private static let positionsKey = "panelPositions" // [arrangement: [minX, minY, maxY, anchorTop]]
     private static let legacyPositionKey = "panelPosition"
 
-    // Idle dimming: fade to dimmedAlpha after dimAfterSeconds without the mouse over the panel
+    // Idle dimming: fade to dimmedAlpha after dimAfterSeconds without the mouse over the panel; a click wakes it
     var dimAfterSeconds: Int = 10 { didSet { touch() } }
     // Set while something needs attention (nudge, calendar suggestion); keeps the panel fully visible
     var holdAwake = false { didSet { touch() } }
@@ -84,14 +84,20 @@ final class FloatingPanel: NSPanel {
         touch()
     }
 
+    // Hovering neither wakes a dimmed panel nor lets a visible one fade; only a click wakes it
     override func mouseEntered(with event: NSEvent) {
         mouseInside = true
-        touch()
+        dimTimer?.invalidate()
     }
 
     override func mouseExited(with event: NSEvent) {
         mouseInside = false
-        touch()
+        if alphaValue > dimmedAlpha + 0.01 { touch() }
+    }
+
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown || event.type == .rightMouseDown { touch() }
+        super.sendEvent(event)
     }
 
     // MARK: - Idle dimming

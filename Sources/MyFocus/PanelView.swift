@@ -165,14 +165,16 @@ struct PanelView: View {
                 .accessibilityLabel(collapsed ? L.t("Show all focuses") : L.t("Show only the active focus"))
                 .help(collapsed ? L.t("Show all focuses") : L.t("Show only the active focus"))
             }
-            Button { store.pause() } label: {
-                Image(systemName: "pause.circle.fill")
-                    .font(.ui(15, s))
+            // Only while a focus runs; the header already shows the pause icon otherwise
+            if store.active != nil {
+                Button { store.pause() } label: {
+                    Image(systemName: "pause.circle.fill")
+                        .font(.ui(15, s))
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(L.t("Pause"))
+                .help(L.t("Pause"))
             }
-            .buttonStyle(.borderless)
-            .disabled(store.active == nil)
-            .accessibilityLabel(L.t("Pause"))
-            .help(L.t("Pause"))
             Button {
                 editingNoteID = nil
                 adding = true

@@ -80,8 +80,8 @@ Optional VS Code task (`.vscode/tasks.json`) so ⌘⇧B does step 3:
 - The window stays on top, on all Spaces, and never steals focus. Drag it by the handle (≡) in the header.
   Its height follows the number of focuses. The position is remembered across launches; the default is the
   top-left corner. Hide and show it with ⌃⌥F or from the menu bar.
-- The header shows the state: a colored dot + "Working · 12 min", or a pause icon. The ⏸ button pauses, **+** adds
-  a focus (type, Enter; Esc cancels). At most 3 focuses by default, configurable 1–50 in Settings.
+- The header shows the state: a colored dot + "Working · 12 min", or a pause icon. The ⏸ button (shown while a
+  focus runs) pauses, **+** adds a focus (type, Enter; Esc cancels). At most 3 focuses by default, configurable 1–50 in Settings.
 - Each focus has its own color (assigned automatically, change it via right-click → Color).
 - While the mouse is away the panel shows only the active focus (or the last active one while paused); the other
   focuses shrink to colored dots that you can click to switch. Clicking the row or the chevron in the header shows
@@ -109,7 +109,8 @@ Optional VS Code task (`.vscode/tasks.json`) so ⌘⇧B does step 3:
 - **Inactivity nudge**: after N minutes on the same focus (default 45, 0 = off) the window border turns orange and asks
   "Still working on this?" with Yes / ⏸.
 - **Idle dimming**: while paused, the window fades after N seconds without the mouse over it (default 10, 0 = never)
-  and comes back on hover, when a focus starts, or when a nudge is due. A running focus is never dimmed.
+  and comes back on a click (hovering leaves it dimmed), when a focus starts, or when a nudge is due. A running
+  focus is never dimmed.
 - **Do Not Disturb** (off by default): while a focus runs, DND is on; it goes off on pause, screen lock, sleep and
   quit. See below for the one-time setup.
 - Locking the screen or sleeping pauses; unlocking resumes the last focus.

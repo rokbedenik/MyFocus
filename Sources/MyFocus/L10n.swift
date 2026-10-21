@@ -94,8 +94,8 @@ enum L {
         "Show only the active focus": "Pokaži samo aktivni fokus",
         "While paused, dim the window after": "Med pavzo zatemni okno po",
         "seconds (0 = never)": "sekundah (0 = nikoli)",
-        "Only while no focus is running. The window fades when the mouse is not over it and comes back on hover, when a focus starts, or when a nudge is due.":
-            "Samo ko ne teče noben fokus. Okno zbledi, ko miška ni nad njim, in se vrne ob prehodu z miško, ob zagonu fokusa ali ko je na vrsti opozorilo.",
+        "Only while no focus is running. The window fades when the mouse is not over it and comes back on a click, when a focus starts, or when a nudge is due.":
+            "Samo ko ne teče noben fokus. Okno zbledi, ko miška ni nad njim, in se vrne ob kliku, ob zagonu fokusa ali ko je na vrsti opozorilo.",
         "Log …": "Dnevnik …",
         "Do Not Disturb": "Ne moti",
         "Turn on Do Not Disturb while a focus is running": "Vklopi Ne moti, dokler teče fokus",
