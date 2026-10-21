@@ -23,7 +23,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSMenu.popUpContextMenu(self.buildMenu(), with: event, for: view)
         }
         panel = FloatingPanel { PanelView(store: store, settings: settings, commands: commands, calendar: calendar) }
-        panel.onKeyChange = { [weak self] key in self?.commands.panelIsKey = key }
         panel.restorePosition()
         panel.orderFrontRegardless()
 

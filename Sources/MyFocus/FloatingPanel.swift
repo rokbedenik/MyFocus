@@ -41,7 +41,7 @@ final class FloatingPanel: NSPanel {
         hasShadow = true
         isReleasedWhenClosed = false
 
-        let hosting = NSHostingView(rootView: content().fixedSize())
+        let hosting = FirstMouseHostingView(rootView: content().fixedSize())
         hosting.sizingOptions = [.minSize, .maxSize]
         contentView = hosting
         hosting.addTrackingArea(NSTrackingArea(
@@ -74,18 +74,13 @@ final class FloatingPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 
-    // Lets SwiftUI know whether the panel has keyboard focus (typing keeps the list expanded)
-    var onKeyChange: ((Bool) -> Void)?
-
     override func becomeKey() {
         super.becomeKey()
-        onKeyChange?(true)
         touch()
     }
 
     override func resignKey() {
         super.resignKey()
-        onKeyChange?(false)
         touch()
     }
 
@@ -195,4 +190,10 @@ final class FloatingPanel: NSPanel {
         lastSize = frame.size
         rememberPosition()
     }
+}
+
+// The panel is usually not the key window. By default AppKit uses the first click only to make it key and
+// drops the event, so a button would need two clicks; accepting the first mouse makes every click count.
+private final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }

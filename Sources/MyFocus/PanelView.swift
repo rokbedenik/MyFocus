@@ -6,8 +6,6 @@ import Combine
 final class PanelCommands: ObservableObject {
     @Published var newFocusTick = 0
     @Published var noteTick = 0
-    // Mirrors the panel's key-window state
-    @Published var panelIsKey = false
     // Set by the app delegate: shows the app menu at a right-click on the drag handle
     var contextMenu: ((NSView, NSEvent) -> Void)?
 }
@@ -36,9 +34,10 @@ struct PanelView: View {
     private var s: CGFloat { settings.uiScale }
     private var nudging: Bool { store.nudgeDue }
 
-    // Collapsed: only the active (or last active) focus is listed
+    // Collapsed: only the active (or last active) focus is listed. Whether the panel is the key window
+    // plays no role, so the chevron always has a visible effect.
     private var collapsed: Bool {
-        settings.collapseWhenIdle && !expanded && !commands.panelIsKey && !adding && editingNoteID == nil
+        settings.collapseWhenIdle && !expanded && !adding && editingNoteID == nil
     }
 
     private var shownID: UUID? { store.state.activeID ?? store.state.lastActiveID }

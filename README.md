@@ -85,7 +85,8 @@ Optional VS Code task (`.vscode/tasks.json`) so ⌘⇧B does step 3:
 - Each focus has its own color (assigned automatically, change it via right-click → Color).
 - While the mouse is away the panel shows only the active focus (or the last active one while paused); the other
   focuses shrink to colored dots that you can click to switch. Clicking the row or the chevron in the header shows
-  all rows; they fold away again once the mouse leaves (Settings → Behavior → Window to turn this off). The window is anchored at its top edge and grows
+  all rows; they fold away again once the mouse leaves (Settings → Behavior → Window to turn this off). Buttons
+  react to the first click even when another app is active. The window is anchored at its top edge and grows
   downward, so the header with the drag handle and the + button never moves. Click a row to switch, the active one
   has a tinted background. Double-click the name (or right-click → Rename) to rename it.
 - Hovering a row shows 💬 (note: where did I leave off) and ✓ (done: removes the focus from the list, its time stays
