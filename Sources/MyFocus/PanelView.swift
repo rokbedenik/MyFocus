@@ -226,7 +226,8 @@ struct FocusRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4 * s) {
             HStack(spacing: 6 * s) {
-                Image(systemName: isActive ? "largecircle.fill.circle" : "circle.fill")
+                // Filled dot only for the active focus; the others are a hollow ring in their color
+                Image(systemName: isActive ? "circle.fill" : "circle")
                     .font(.ui(13, s))
                     .foregroundStyle(focus.color)
                 if editingTitle {
