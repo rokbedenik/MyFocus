@@ -9,7 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let settings = AppSettings()
     lazy var store = FocusStore(settings: settings)
     let calendar = CalendarWatcher()
-    private lazy var settingsWindow = SettingsWindowController(settings: settings, calendar: calendar)
+    private lazy var settingsWindow = SettingsWindowController(settings: settings, calendar: calendar, store: store)
     private lazy var logWindow = LogWindowController(store: store)
     private var dnd: DoNotDisturb!
     private var panel: FloatingPanel!
@@ -146,6 +146,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(item)
         }
         if !store.focuses.isEmpty { menu.addItem(.separator()) }
+        if !store.templates.isEmpty {
+            let sub = NSMenu()
+            for t in store.templates {
+                let item = NSMenuItem(title: t.title, action: #selector(useTemplateFromMenu(_:)), keyEquivalent: "")
+                item.representedObject = t.id
+                item.target = self
+                sub.addItem(item)
+            }
+            let parent = NSMenuItem(title: L.t("New from template"), action: nil, keyEquivalent: "")
+            parent.submenu = sub
+            menu.addItem(parent)
+            menu.addItem(.separator())
+        }
         menu.addItem(withTitle: L.t("Pause"), action: #selector(pause), keyEquivalent: "").target = self
 
         let undo = NSMenuItem(
@@ -175,6 +188,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func pause() { store.pause() }
+
+    @objc private func useTemplateFromMenu(_ sender: NSMenuItem) {
+        if let id = sender.representedObject as? UUID { store.useTemplate(id) }
+    }
 
     @objc private func undoAction() { store.undo() }
 

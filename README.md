@@ -86,8 +86,12 @@ Optional VS Code task (`.vscode/tasks.json`) so ⌘⇧B does step 3:
 - While the mouse is away the panel shows only the active focus (or the last active one while paused); hovering
   it shows all of them (Settings → Behavior → Window to turn this off). Click a row to switch, the active one has a
   tinted background. Double-click the name (or right-click → Rename) to rename it.
-- Hovering a row shows 💬 (note: where did I leave off), ✓ (done) and 🗑 (delete). The same actions are in the
-  right-click menu. Delete/done can be undone from the menu bar.
+- Hovering a row shows 💬 (note: where did I leave off) and ✓ (done: removes the focus from the list, its time stays
+  in the log). Right-click offers the same plus Rename, Color, Save as template and Delete. Delete/done can be
+  undone from the menu bar.
+- **Templates** (Settings → Templates): reusable focuses with a name and color. When you press + they appear as chips
+  above the text field; one click creates the focus, or switches to it if one with that name is already open. Also in
+  the menu under "New from template". Right-click any focus → "Save as template" to create one.
 - **Global shortcuts** (Settings → Shortcuts): show/hide window (default ⌃⌥F), new focus (off by default) and
   note on the active focus (off by default). Click the field, press the combination; ⌫ turns it off.
 - **Size** (Settings → Appearance): a slider from 80 % to 200 % scales the whole panel (text, icons, spacing, width).
@@ -181,7 +185,6 @@ macOS caches icons aggressively; after replacing the app in `/Applications` you 
 - Keyboard switching: ⌃⌥1 … ⌃⌥5 jump straight to the n-th focus
 - Pomodoro mode: optional 25/5 cycle on the active focus with the nudge bar as the break prompt
 - Export: today's/this week's log as CSV or Markdown for a timesheet
-- Focus templates: recurring focuses (e.g. "Mail", "Standup") re-added with one click
 - Interruption counter: a quick "I got interrupted" button that logs the moment without switching
 - Calendar: pick which calendars count, and end the focus when the event ends
 - Sync: proper merge instead of last-writer-wins

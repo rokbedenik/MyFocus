@@ -118,6 +118,50 @@ final class FocusStore: ObservableObject {
         if activate { switchTo(f.id) } else { save() }
     }
 
+    // MARK: - Templates
+
+    var templates: [FocusTemplate] { state.templates }
+
+    func addTemplate(title: String, colorIndex: Int = 0, note: String = "") {
+        let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return }
+        state.templates.append(FocusTemplate(title: t, colorIndex: colorIndex, note: note))
+        save()
+    }
+
+    func updateTemplate(_ id: UUID, title: String? = nil, colorIndex: Int? = nil, note: String? = nil) {
+        guard let i = state.templates.firstIndex(where: { $0.id == id }) else { return }
+        if let title, !title.trimmingCharacters(in: .whitespaces).isEmpty { state.templates[i].title = title }
+        if let colorIndex { state.templates[i].colorIndex = colorIndex }
+        if let note { state.templates[i].note = note }
+        save()
+    }
+
+    func deleteTemplate(_ id: UUID) {
+        state.templates.removeAll { $0.id == id }
+        save()
+    }
+
+    func saveAsTemplate(_ focusID: UUID) {
+        guard let f = state.focuses.first(where: { $0.id == focusID }) else { return }
+        guard !state.templates.contains(where: { $0.title == f.title }) else { return }
+        addTemplate(title: f.title, colorIndex: f.colorIndex, note: f.note)
+    }
+
+    // Switch to an open focus with the template's title, or create one from the template
+    func useTemplate(_ id: UUID) {
+        guard let t = state.templates.first(where: { $0.id == id }) else { return }
+        if let existing = focuses.first(where: { $0.title == t.title }) {
+            switchTo(existing.id)
+            return
+        }
+        guard canAdd else { return }
+        var f = Focus(title: t.title, colorIndex: t.colorIndex)
+        f.note = t.note
+        state.focuses.append(f)
+        switchTo(f.id)
+    }
+
     func setColor(_ id: UUID, _ index: Int) {
         guard let i = state.focuses.firstIndex(where: { $0.id == id }) else { return }
         state.focuses[i].colorIndex = index

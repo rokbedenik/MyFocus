@@ -219,6 +219,37 @@ struct PanelView: View {
     }
 
     private var addField: some View {
+        VStack(alignment: .leading, spacing: 6 * s) {
+            // One-click templates above the free-text field
+            if !store.templates.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6 * s) {
+                        ForEach(store.templates) { t in
+                            Button {
+                                store.useTemplate(t.id)
+                                newTitle = ""
+                                adding = false
+                            } label: {
+                                HStack(spacing: 4 * s) {
+                                    Circle().fill(t.color).frame(width: 7 * s, height: 7 * s)
+                                    Text(t.title).font(.ui(10, s)).lineLimit(1)
+                                }
+                                .padding(.horizontal, 8 * s)
+                                .padding(.vertical, 4 * s)
+                                .background(t.color.opacity(0.18), in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            .focusEffectDisabled()
+                        }
+                    }
+                    .padding(.horizontal, 2)
+                }
+            }
+            textField
+        }
+    }
+
+    private var textField: some View {
         TextField(L.t("New focus ..."), text: $newTitle)
             .textFieldStyle(.roundedBorder)
             .font(.ui(13, s))
@@ -294,11 +325,6 @@ struct FocusRow: View {
                     }
                     .accessibilityLabel(L.t("Done"))
                     .help(L.t("Done (removes from the list, time stays in the log)"))
-                    Button { store.delete(focus.id) } label: {
-                        Image(systemName: "trash")
-                    }
-                    .accessibilityLabel(L.t("Delete"))
-                    .help(L.t("Delete"))
                 }
                 .font(.ui(13, s))
                 .buttonStyle(.borderless)
@@ -350,6 +376,8 @@ struct FocusRow: View {
         }
         .contextMenu {
             Button(L.t("Rename …")) { startRenaming() }
+            Button(L.t("Save as template")) { store.saveAsTemplate(focus.id) }
+                .disabled(store.templates.contains { $0.title == focus.title })
             Button(L.t("Note: where did I leave off ...")) { startEditingNote() }
             Menu(L.t("Color")) {
                 ForEach(Array(FocusPalette.colors.enumerated()), id: \.offset) { i, c in

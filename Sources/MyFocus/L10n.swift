@@ -51,6 +51,13 @@ enum L {
         "Note: where did I leave off ...": "Opomba: kje sem ostal ...",
         "Color": "Barva",
         "Rename …": "Preimenuj …",
+        "Save as template": "Shrani kot predlogo",
+        "Templates": "Predloge",
+        "New from template": "Nov iz predloge",
+        "New template": "Nova predloga",
+        "Add template": "Dodaj predlogo",
+        "Reusable focuses: one click creates a focus with that name and color, or switches to it if it is already open. They show up as chips when you press + and in the menu under \"New from template\".":
+            "Ponovno uporabni fokusi: en klik ustvari fokus s tem imenom in barvo ali preklopi nanj, če je že odprt. Prikažejo se kot gumbki ob pritisku na + in v meniju pod \"Nov iz predloge\".",
         "Double-click to rename": "Dvojni klik za preimenovanje",
         "Done": "Končano",
         "Still working on this?": "Še vedno delaš na tem?",
