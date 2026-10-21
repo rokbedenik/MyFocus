@@ -57,6 +57,8 @@ struct SwitchEvent: Codable, Identifiable {
 struct AppState: Codable {
     var focuses: [Focus] = []
     var activeID: UUID?
+    // The focus shown in collapsed mode while paused
+    var lastActiveID: UUID?
     var activeSince: Date?
     var log: [SwitchEvent] = []
 }

@@ -115,6 +115,10 @@ struct SettingsView: View {
             }
 
             Section(L.t("Window")) {
+                Toggle(L.t("Show only the active focus while the mouse is away"), isOn: $settings.collapseWhenIdle)
+                Text(L.t("Hovering the window shows all focuses; while paused the last active one stays visible."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 HStack {
                     Stepper(value: $settings.dimAfterSeconds, in: AppSettings.dimAfterRange, step: 5) {
                         Text(L.t("While paused, dim the window after"))

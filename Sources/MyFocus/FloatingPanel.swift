@@ -74,13 +74,18 @@ final class FloatingPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 
+    // Lets SwiftUI know whether the panel has keyboard focus (typing keeps the list expanded)
+    var onKeyChange: ((Bool) -> Void)?
+
     override func becomeKey() {
         super.becomeKey()
+        onKeyChange?(true)
         touch()
     }
 
     override func resignKey() {
         super.resignKey()
+        onKeyChange?(false)
         touch()
     }
 

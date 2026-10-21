@@ -27,6 +27,11 @@ final class AppSettings: ObservableObject {
     }
 
     // Seconds without the mouse over the panel before it fades; 0 disables
+    // Show only the active (or last active) focus while the mouse is away
+    @Published var collapseWhenIdle: Bool {
+        didSet { UserDefaults.standard.set(collapseWhenIdle, forKey: Keys.collapseWhenIdle) }
+    }
+
     @Published var dimAfterSeconds: Int {
         didSet {
             let clamped = Self.dimAfterRange.clamping(dimAfterSeconds)
@@ -86,6 +91,7 @@ final class AppSettings: ObservableObject {
         static let maxFocuses = "maxFocuses"
         static let nudgeMinutes = "nudgeMinutes"
         static let dimAfterSeconds = "dimAfterSeconds"
+        static let collapseWhenIdle = "collapseWhenIdle"
         static let dndEnabled = "dndEnabled"
         static let toggleShortcut = "toggleShortcut"
         static let newFocusShortcut = "newFocusShortcut"
@@ -103,6 +109,7 @@ final class AppSettings: ObservableObject {
         maxFocuses = Self.maxFocusesRange.contains(storedMax) ? storedMax : 3
         nudgeMinutes = d.object(forKey: Keys.nudgeMinutes) == nil ? 45 : d.integer(forKey: Keys.nudgeMinutes)
         dimAfterSeconds = d.object(forKey: Keys.dimAfterSeconds) == nil ? 10 : d.integer(forKey: Keys.dimAfterSeconds)
+        collapseWhenIdle = d.object(forKey: Keys.collapseWhenIdle) == nil ? true : d.bool(forKey: Keys.collapseWhenIdle)
         dndEnabled = d.bool(forKey: Keys.dndEnabled)
         toggleShortcut = Self.load(key: Keys.toggleShortcut, default: .toggleDefault)
         newFocusShortcut = Self.load(key: Keys.newFocusShortcut, default: nil)

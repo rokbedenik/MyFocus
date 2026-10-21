@@ -6,6 +6,8 @@ import Combine
 final class PanelCommands: ObservableObject {
     @Published var newFocusTick = 0
     @Published var noteTick = 0
+    // Mirrors the panel's key-window state
+    @Published var panelIsKey = false
     // Set by the app delegate: shows the app menu at a right-click on the drag handle
     var contextMenu: ((NSView, NSEvent) -> Void)?
 }
@@ -26,20 +28,33 @@ struct PanelView: View {
     @State private var adding = false
     @State private var newTitle = ""
     @State private var editingNoteID: UUID?
+    @State private var hovering = false
+    @State private var unhoverTask: Task<Void, Never>?
     @FocusState private var inputFocused: Bool
 
     private var s: CGFloat { settings.uiScale }
     private var nudging: Bool { store.nudgeDue }
+
+    // Collapsed: only the active (or last active) focus is listed
+    private var collapsed: Bool {
+        settings.collapseWhenIdle && !hovering && !commands.panelIsKey && !adding && editingNoteID == nil
+    }
+
+    private var visibleFocuses: [Focus] {
+        guard collapsed else { return store.focuses }
+        let shown = store.state.activeID ?? store.state.lastActiveID
+        return store.focuses.filter { $0.id == shown }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8 * s) {
             header
             if nudging { nudgeBar }
             if let sug = calendar.suggestion { suggestionBar(sug) }
-            if !store.focuses.isEmpty {
+            if !visibleFocuses.isEmpty {
                 Divider()
                 VStack(spacing: 2 * s) {
-                    ForEach(store.focuses) { f in
+                    ForEach(visibleFocuses) { f in
                         FocusRow(store: store, settings: settings, focus: f, editingNoteID: $editingNoteID)
                     }
                 }
@@ -49,6 +64,19 @@ struct PanelView: View {
                 Text(L.t("Click + and type what you are working on."))
                     .font(.ui(10, s))
                     .foregroundStyle(.secondary)
+            }
+        }
+        .animation(.easeInOut(duration: 0.15), value: collapsed)
+        .onHover { inside in
+            unhoverTask?.cancel()
+            if inside {
+                hovering = true
+            } else {
+                // Short grace period so a mouse that only brushes the edge does not collapse the list
+                unhoverTask = Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(500))
+                    if !Task.isCancelled { hovering = false }
+                }
             }
         }
         .padding(12 * s)

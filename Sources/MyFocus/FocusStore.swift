@@ -128,6 +128,7 @@ final class FocusStore: ObservableObject {
         guard id != state.activeID else { return }
         closeActiveInterval()
         state.activeID = id
+        if let id { state.lastActiveID = id }
         state.activeSince = id == nil ? nil : Date()
         nudgeAckAt = nil
         let title = id.flatMap { i in state.focuses.first { $0.id == i }?.title } ?? pauseLabel
