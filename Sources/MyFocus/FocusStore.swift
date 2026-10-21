@@ -44,9 +44,11 @@ final class FocusStore: ObservableObject {
         }
     }
 
+    // MYFOCUS_STATE_DIR overrides the location (used by scripts/make-screenshots.sh for sample data)
     static var localURL: URL {
-        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("MyFocus", isDirectory: true)
+        let dir = ProcessInfo.processInfo.environment["MYFOCUS_STATE_DIR"].map { URL(fileURLWithPath: $0, isDirectory: true) }
+            ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("MyFocus", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("state.json")
     }

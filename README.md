@@ -8,6 +8,50 @@ Swift + SwiftUI/AppKit, no Xcode. Edit in VS Code, build with a script.
 
 Repo: https://github.com/rokbedenik/MyFocus
 
+## Screenshots
+
+<p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/panel-running-dark.png">
+    <img src="docs/screenshots/panel-running.png" width="356" alt="Panel with three focuses, one running">
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/panel-collapsed-dark.png">
+    <img src="docs/screenshots/panel-collapsed.png" width="356" alt="Collapsed panel: only the active focus, the others as dots">
+  </picture>
+</p>
+<p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/panel-paused-dark.png">
+    <img src="docs/screenshots/panel-paused.png" width="356" alt="Paused panel">
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/panel-nudge-dark.png">
+    <img src="docs/screenshots/panel-nudge.png" width="356" alt="Inactivity nudge after 45 minutes on the same focus">
+  </picture>
+</p>
+
+Left to right, top to bottom: a running focus with the full list; the collapsed view while the mouse is away
+(other focuses as colored dots); paused; the inactivity nudge. The images follow your GitHub theme (light/dark)
+and are rendered from sample data with `scripts/make-screenshots.sh`.
+
+## What it does
+
+- Always-on-top panel that never steals keyboard focus; drag it anywhere, it remembers its place per display setup.
+- Up to N focuses at once (default 3), one running; click to switch, the time per focus is tracked.
+- "Where did I leave off" note per focus, shown when you come back to it.
+- Collapses to the active focus while the mouse is away; a click shows the rest.
+- Inactivity nudge ("still working on this?"), pause on screen lock/sleep, resume on unlock.
+- Optional Do Not Disturb while a focus runs, calendar-based suggestions, iCloud/any-folder sync for a second Mac.
+- Templates for recurring focuses, global shortcuts, undo, a daily switch log, English/Slovenian.
+- No account, no network, no telemetry: one JSON file in Application Support (or your sync folder).
+
+## Requirements
+
+- macOS 14 (Sonoma) or newer, Apple Silicon (the prebuilt app is arm64 only; an Intel build needs
+  `-target x86_64-apple-macosx14.0` in `scripts/build-app.sh`).
+- For building: Xcode Command Line Tools. No Xcode, no SwiftPM.
+
 ## Install (prebuilt)
 
 A ready-to-run build is in the repo: [`release/MyFocus.zip`](release/MyFocus.zip) (Apple Silicon, macOS 14+).
@@ -144,6 +188,38 @@ If you prefer to build them by hand, create them in the **Shortcuts** app (Setti
 Then enable "Turn on Do Not Disturb while a focus is running" in Settings. The first run may ask you to allow
 My Focus to run shortcuts. Failures are logged to the system log (`log stream --predicate 'process == "MyFocus"'`).
 
+## Uninstall
+
+Quit the app from the menu bar, then remove:
+
+```sh
+rm -rf /Applications/MyFocus.app
+rm -rf ~/Library/Application\ Support/MyFocus          # focuses, log, templates
+defaults delete com.rbedenik.myfocus                    # settings, window position
+```
+
+If "Launch at login" was on, it disappears from System Settings → General → Login Items together with the app.
+The two DND shortcuts (if you created them) stay in the Shortcuts app; delete them there.
+
+## Troubleshooting
+
+| Symptom | Cause / fix |
+|---|---|
+| "MyFocus is damaged" or "cannot be opened" on first launch | Quarantine flag on the downloaded zip: `xattr -dr com.apple.quarantine /Applications/MyFocus.app`, or right-click → Open. |
+| DND does not switch | Check `shortcuts list \| grep "MyFocus DND"`; the names must match exactly. Run `shortcuts run "MyFocus DND On"` in Terminal once to grant permissions. |
+| Calendar suggestions never appear | Calendar access was denied: System Settings → Privacy & Security → Calendars → My Focus. Declined and all-day events are ignored. |
+| Global shortcut does nothing | Another app owns the combination; pick a different one in Settings → Shortcuts. |
+| Window is off-screen after changing displays | Position is per display arrangement; `defaults delete com.rbedenik.myfocus panelPositions` resets it to the top-left corner. |
+| Second Mac shows old data | Sync folder not downloaded (iCloud "Optimize Mac Storage"), or both Macs ran a focus at once (last writer wins). |
+| Build: "unable to load standard library" / SDK errors | SDK 27.0 mismatch; the script picks SDK 26.5 automatically, or set `SDKROOT`. |
+
+## Data and privacy
+
+Everything stays on your Mac. `state.json` (focuses, times, notes, log, templates) lives in
+`~/Library/Application Support/MyFocus/` or in the sync folder you chose; settings and the window position are in
+`defaults` under `com.rbedenik.myfocus`. The app makes no network requests. Calendar access is only requested when
+you enable the calendar feature.
+
 ## Layout
 
 ```
@@ -169,7 +245,17 @@ release/MyFocus.zip           prebuilt app (refresh with scripts/build-app.sh re
 scripts/build-app.sh          build + package .app + ad-hoc sign (+ install / release)
 scripts/make-icon.swift       regenerates AppIcon.icns from the "scope" SF Symbol
 scripts/make-dnd-shortcuts.sh creates + imports the two DND shortcuts
+scripts/make-screenshots.sh   renders docs/screenshots/*.png from sample data (no window needed)
+scripts/make-screenshots.swift  the renderer, compiled together with the app sources
+docs/screenshots/             README images (light + dark)
 ```
+
+## Screenshots (regenerating)
+
+`scripts/make-screenshots.sh` compiles the app sources with a small `@main` that builds sample data in a scratch
+folder (`MYFOCUS_STATE_DIR`), hosts `PanelView` in an `NSHostingView` and draws it into a 2x PNG, for the light
+and the dark appearance. Nothing is shown on screen, so it also works from CI or a sandbox. Run it after UI
+changes and commit the images.
 
 ## App icon
 
