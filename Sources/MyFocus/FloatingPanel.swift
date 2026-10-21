@@ -47,10 +47,15 @@ final class FloatingPanel: NSPanel {
         isReleasedWhenClosed = false
         animationBehavior = .none
 
-        let hosting = NSHostingView(rootView: content())
+        let hosting = FittingHostingView(rootView: content())
         // The window size is driven by fit(to:), not by constraints
         hosting.sizingOptions = []
         contentView = hosting
+        // SwiftUI invalidates the intrinsic size whenever the content's ideal size changes
+        hosting.onContentSizeChange = { [weak self, weak hosting] in
+            guard let self, let hosting else { return }
+            self.fit(to: hosting.fittingSize)
+        }
         hosting.addTrackingArea(NSTrackingArea(
             rect: .zero, options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect], owner: self, userInfo: nil))
 
@@ -227,5 +232,21 @@ final class FloatingPanel: NSPanel {
         UserDefaults.standard.set(positions, forKey: Self.positionsKey)
         // The app may be killed (reinstall) right after a move; do not leave the write pending
         UserDefaults.standard.synchronize()
+    }
+}
+
+// NSHostingView that reports when SwiftUI changes the content's ideal size
+final class FittingHostingView<Content: View>: NSHostingView<Content> {
+    var onContentSizeChange: (() -> Void)?
+
+    override func invalidateIntrinsicContentSize() {
+        super.invalidateIntrinsicContentSize()
+        // Defer out of the layout pass; fittingSize is accurate by then
+        DispatchQueue.main.async { [weak self] in self?.onContentSizeChange?() }
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        DispatchQueue.main.async { [weak self] in self?.onContentSizeChange?() }
     }
 }
