@@ -266,26 +266,24 @@ struct PanelView: View {
 
     private var addField: some View {
         VStack(alignment: .leading, spacing: 6 * s) {
-            // One-click templates above the free-text field
-            if !store.templates.isEmpty {
+            // One-click suggestions above the free-text field: templates, then recently finished focuses
+            let recent = store.recentSuggestions
+            if !store.templates.isEmpty || !recent.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6 * s) {
                         ForEach(store.templates) { t in
-                            Button {
+                            chip(title: t.title, color: t.color, fill: t.color.opacity(0.18)) {
                                 store.useTemplate(t.id)
-                                newTitle = ""
-                                adding = false
-                            } label: {
-                                HStack(spacing: 4 * s) {
-                                    Circle().fill(t.color).frame(width: 7 * s, height: 7 * s)
-                                    Text(t.title).font(.ui(10, s)).lineLimit(1)
-                                }
-                                .padding(.horizontal, 8 * s)
-                                .padding(.vertical, 4 * s)
-                                .background(t.color.opacity(0.18), in: Capsule())
                             }
-                            .buttonStyle(.plain)
-                            .focusEffectDisabled()
+                            .help(L.t("Template"))
+                        }
+                        ForEach(recent) { f in
+                            chip(title: f.title, color: f.color, fill: Color.secondary.opacity(0.15), onDismiss: {
+                                store.dismissSuggestion(f.id)
+                            }) {
+                                store.reuseFinished(f.id)
+                            }
+                            .help(L.t("Recently finished; × removes it from the suggestions"))
                         }
                     }
                     .padding(.horizontal, 2)
@@ -293,6 +291,44 @@ struct PanelView: View {
             }
             textField
         }
+    }
+
+    // Capsule with a colored dot and the title; onDismiss adds a small × on the right
+    private func chip(title: String, color: Color, fill: Color, onDismiss: (() -> Void)? = nil,
+                      action: @escaping () -> Void) -> some View {
+        HStack(spacing: 4 * s) {
+            Button {
+                action()
+                newTitle = ""
+                adding = false
+            } label: {
+                HStack(spacing: 4 * s) {
+                    Circle().fill(color).frame(width: 7 * s, height: 7 * s)
+                    Text(title).font(.ui(10, s)).lineLimit(1)
+                }
+                .padding(.leading, 8 * s)
+                .padding(.trailing, onDismiss == nil ? 8 * s : 2 * s)
+                .padding(.vertical, 4 * s)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .focusEffectDisabled()
+            if let onDismiss {
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark")
+                        .font(.ui(8, s, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .padding(.trailing, 7 * s)
+                        .padding(.vertical, 4 * s)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .focusEffectDisabled()
+                .accessibilityLabel(L.t("Do not suggest again"))
+                .help(L.t("Do not suggest again"))
+            }
+        }
+        .background(fill, in: Capsule())
     }
 
     private var textField: some View {

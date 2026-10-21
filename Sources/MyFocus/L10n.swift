@@ -54,6 +54,9 @@ enum L {
         "Save as template": "Shrani kot predlogo",
         "Templates": "Predloge",
         "New from template": "Nov iz predloge",
+        "Template": "Predloga",
+        "Recently finished; × removes it from the suggestions": "Nedavno zaključen; × ga odstrani iz predlogov",
+        "Do not suggest again": "Ne predlagaj več",
         "New template": "Nova predloga",
         "Add template": "Dodaj predlogo",
         "Reusable focuses: one click creates a focus with that name and color, or switches to it if it is already open. They show up as chips when you press + and in the menu under \"New from template\".":

@@ -139,6 +139,9 @@ Optional VS Code task (`.vscode/tasks.json`) so ⌘⇧B does step 3:
 - **Templates** (Settings → Templates): reusable focuses with a name and color. When you press + they appear as chips
   above the text field; one click creates the focus, or switches to it if one with that name is already open. Also in
   the menu under "New from template". Right-click any focus → "Save as template" to create one.
+- **Recently finished**: next to the templates, the last three finished focuses are offered as grey chips. One click
+  starts a fresh focus with the same name, color and note. The × on a chip removes that name from the suggestions
+  for good. Templates have no ×; manage them in Settings.
 - **Global shortcuts** (Settings → Shortcuts): show/hide window (default ⌃⌥F), new focus (off by default) and
   note on the active focus (off by default). Click the field, press the combination; ⌫ turns it off.
 - **Size** (Settings → Appearance): a slider from 80 % to 200 % scales the whole panel (text, icons, spacing, width).

@@ -219,6 +219,41 @@ final class FocusStore: ObservableObject {
         if state.activeID == id { switchTo(nil) }
         guard let i = state.focuses.firstIndex(where: { $0.id == id }) else { return }
         state.focuses[i].isDone = true
+        state.focuses[i].doneAt = Date()
+        save()
+    }
+
+    // MARK: - Suggestions from finished focuses
+
+    // The last three finished focuses, newest first, offered next to the templates when adding a focus.
+    // Skips dismissed ones, titles that are open again and titles a template already covers.
+    var recentSuggestions: [Focus] {
+        let open = Set(focuses.map(\.title))
+        let covered = Set(templates.map(\.title))
+        var seen = Set<String>()
+        return doneFocuses
+            .filter { !$0.hiddenFromSuggestions && !open.contains($0.title) && !covered.contains($0.title) }
+            .sorted { ($0.doneAt ?? $0.createdAt) > ($1.doneAt ?? $1.createdAt) }
+            .filter { seen.insert($0.title).inserted }
+            .prefix(3)
+            .map { $0 }
+    }
+
+    // Start a fresh focus with the title, color and note of a finished one (its time stays in the log)
+    func reuseFinished(_ id: UUID) {
+        guard canAdd, let f = state.focuses.first(where: { $0.id == id && $0.isDone }) else { return }
+        var n = Focus(title: f.title, colorIndex: f.colorIndex)
+        n.note = f.note
+        state.focuses.append(n)
+        switchTo(n.id)
+    }
+
+    // Never suggest this title again (applies to every finished focus with that title)
+    func dismissSuggestion(_ id: UUID) {
+        guard let title = state.focuses.first(where: { $0.id == id })?.title else { return }
+        for i in state.focuses.indices where state.focuses[i].isDone && state.focuses[i].title == title {
+            state.focuses[i].hiddenFromSuggestions = true
+        }
         save()
     }
 

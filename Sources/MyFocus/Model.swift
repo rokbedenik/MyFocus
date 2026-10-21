@@ -21,6 +21,9 @@ struct Focus: Identifiable, Codable, Equatable {
     var createdAt = Date()
     var totalSeconds: TimeInterval = 0
     var isDone = false
+    var doneAt: Date?
+    // The user removed this finished focus from the suggestions next to the templates
+    var hiddenFromSuggestions = false
     var colorIndex: Int = 0
 
     var color: Color { FocusPalette.color(colorIndex) }
@@ -32,7 +35,7 @@ struct Focus: Identifiable, Codable, Equatable {
 
     // Custom decoding so state files written before colorIndex existed still load
     private enum CodingKeys: String, CodingKey {
-        case id, title, note, createdAt, totalSeconds, isDone, colorIndex
+        case id, title, note, createdAt, totalSeconds, isDone, doneAt, hiddenFromSuggestions, colorIndex
     }
 
     init(from decoder: Decoder) throws {
@@ -43,6 +46,8 @@ struct Focus: Identifiable, Codable, Equatable {
         createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         totalSeconds = try c.decodeIfPresent(TimeInterval.self, forKey: .totalSeconds) ?? 0
         isDone = try c.decodeIfPresent(Bool.self, forKey: .isDone) ?? false
+        doneAt = try c.decodeIfPresent(Date.self, forKey: .doneAt)
+        hiddenFromSuggestions = try c.decodeIfPresent(Bool.self, forKey: .hiddenFromSuggestions) ?? false
         colorIndex = try c.decodeIfPresent(Int.self, forKey: .colorIndex) ?? 0
     }
 }
