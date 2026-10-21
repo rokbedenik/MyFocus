@@ -57,9 +57,14 @@ and are rendered from sample data with `scripts/make-screenshots.sh`.
 
 ## Install (prebuilt)
 
-A ready-to-run build is in the repo: [`release/MyFocus.zip`](release/MyFocus.zip) (Apple Silicon, macOS 14+).
+A ready-to-run build is in the repo (Apple Silicon, macOS 14+):
 
-1. Download and unzip; drag `MyFocus.app` into `/Applications`.
+**Download: https://github.com/rokbedenik/MyFocus/raw/main/release/MyFocus.zip**
+
+(GitHub shows binary files as empty when you browse to `release/MyFocus.zip`; use the link above or the
+"Download raw file" button on that page.)
+
+1. Unzip; drag `MyFocus.app` into `/Applications`.
 2. The app is ad-hoc signed (no Apple developer account), so on the first launch of a *downloaded* copy macOS
    will refuse it. Either right-click → Open → Open, or clear the quarantine flag once:
    ```sh
