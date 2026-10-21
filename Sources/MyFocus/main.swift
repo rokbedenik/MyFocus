@@ -24,6 +24,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         panel = FloatingPanel { PanelView(store: store, settings: settings, commands: commands, calendar: calendar) }
         panel.onKeyChange = { [weak self] key in self?.commands.panelIsKey = key }
+        panel.onAnchorChange = { [weak self] top in self?.commands.anchorTop = top }
+        commands.onContentSize = { [weak self] size in self?.panel.fit(to: size) }
         panel.restorePosition()
         panel.orderFrontRegardless()
 

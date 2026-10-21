@@ -8,6 +8,10 @@ final class PanelCommands: ObservableObject {
     @Published var noteTick = 0
     // Mirrors the panel's key-window state
     @Published var panelIsKey = false
+    // Which edge the panel is anchored to; the header lives on that edge
+    @Published var anchorTop = false
+    // Set by the app delegate: the panel resizes itself to the reported content size
+    var onContentSize: ((CGSize) -> Void)?
     // Set by the app delegate: shows the app menu at a right-click on the drag handle
     var contextMenu: ((NSView, NSEvent) -> Void)?
 }
@@ -17,6 +21,12 @@ extension Font {
     static func ui(_ size: CGFloat, _ scale: CGFloat, weight: Font.Weight = .regular) -> Font {
         .system(size: size * scale, weight: weight)
     }
+}
+
+// Content size of the card, reported to the panel so it can animate its frame
+struct PanelSizeKey: PreferenceKey {
+    static var defaultValue: CGSize = .zero
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) { value = nextValue() }
 }
 
 struct PanelView: View {
@@ -29,54 +39,70 @@ struct PanelView: View {
     @State private var newTitle = ""
     @State private var editingNoteID: UUID?
     @State private var hovering = false
-    @State private var unhoverTask: Task<Void, Never>?
+    @State private var hoverTask: Task<Void, Never>?
     @FocusState private var inputFocused: Bool
 
     private var s: CGFloat { settings.uiScale }
     private var nudging: Bool { store.nudgeDue }
+    private var anchorTop: Bool { commands.anchorTop }
 
-    // Collapsed: only the active (or last active) focus is listed
+    // Collapsed: only the active (or last active) focus is listed, the others become dots
     private var collapsed: Bool {
         settings.collapseWhenIdle && !hovering && !commands.panelIsKey && !adding && editingNoteID == nil
     }
 
+    private var shownID: UUID? { store.state.activeID ?? store.state.lastActiveID }
+
     private var visibleFocuses: [Focus] {
         guard collapsed else { return store.focuses }
-        let shown = store.state.activeID ?? store.state.lastActiveID
-        return store.focuses.filter { $0.id == shown }
+        return store.focuses.filter { $0.id == shownID }
+    }
+
+    private var hiddenFocuses: [Focus] {
+        guard collapsed else { return [] }
+        return store.focuses.filter { $0.id != shownID }
     }
 
     var body: some View {
+        card
+            .background(GeometryReader { geo in
+                Color.clear.preference(key: PanelSizeKey.self, value: geo.size)
+            })
+            .onPreferenceChange(PanelSizeKey.self) { size in
+                commands.onContentSize?(size)
+            }
+            // While the window animates to the new size the card stays glued to the anchored edge
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: anchorTop ? .top : .bottom)
+            .onChange(of: commands.newFocusTick) {
+                guard store.canAdd else { return }
+                editingNoteID = nil
+                adding = true
+                inputFocused = true
+            }
+            .onChange(of: commands.noteTick) {
+                guard let id = store.state.activeID else { return }
+                adding = false
+                editingNoteID = id
+            }
+    }
+
+    // The header sits on the anchored edge so + and the drag handle never move when the list grows
+    private var card: some View {
         VStack(alignment: .leading, spacing: 8 * s) {
-            header
-            if nudging { nudgeBar }
-            if let sug = calendar.suggestion { suggestionBar(sug) }
-            if !visibleFocuses.isEmpty {
+            if anchorTop {
+                header
                 Divider()
-                VStack(spacing: 2 * s) {
-                    ForEach(visibleFocuses) { f in
-                        FocusRow(store: store, settings: settings, focus: f, editingNoteID: $editingNoteID)
-                    }
-                }
-            }
-            if adding { addField }
-            if store.focuses.isEmpty && !adding {
-                Text(L.t("Click + and type what you are working on."))
-                    .font(.ui(10, s))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .animation(.easeInOut(duration: 0.15), value: collapsed)
-        .onHover { inside in
-            unhoverTask?.cancel()
-            if inside {
-                hovering = true
+                bars
+                list
+                if adding { addField }
+                emptyHint
             } else {
-                // Short grace period so a mouse that only brushes the edge does not collapse the list
-                unhoverTask = Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(500))
-                    if !Task.isCancelled { hovering = false }
-                }
+                emptyHint
+                if adding { addField }
+                list
+                bars
+                Divider()
+                header
             }
         }
         .padding(12 * s)
@@ -86,17 +112,63 @@ struct PanelView: View {
             RoundedRectangle(cornerRadius: 12 * s)
                 .strokeBorder(nudging ? AnyShapeStyle(Color.orange) : AnyShapeStyle(.quaternary), lineWidth: nudging ? 2 : 1)
         )
+        .fixedSize(horizontal: false, vertical: true)
         .animation(.easeInOut(duration: 0.3), value: nudging)
-        .onChange(of: commands.newFocusTick) {
-            guard store.canAdd else { return }
-            editingNoteID = nil
-            adding = true
-            inputFocused = true
+        .onHover { inside in
+            hoverTask?.cancel()
+            // A passing mouse does not expand the list; leaving gets a short grace period
+            hoverTask = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(inside ? 250 : 500))
+                if !Task.isCancelled { hovering = inside }
+            }
         }
-        .onChange(of: commands.noteTick) {
-            guard let id = store.state.activeID else { return }
-            adding = false
-            editingNoteID = id
+    }
+
+    @ViewBuilder private var bars: some View {
+        if nudging { nudgeBar }
+        if let sug = calendar.suggestion { suggestionBar(sug) }
+    }
+
+    @ViewBuilder private var list: some View {
+        if !visibleFocuses.isEmpty || !hiddenFocuses.isEmpty {
+            VStack(spacing: 2 * s) {
+                if !anchorTop { dotsRow }
+                ForEach(visibleFocuses) { f in
+                    FocusRow(store: store, settings: settings, focus: f, editingNoteID: $editingNoteID)
+                }
+                if anchorTop { dotsRow }
+            }
+        }
+    }
+
+    @ViewBuilder private var emptyHint: some View {
+        if store.focuses.isEmpty && !adding {
+            Text(L.t("Click + and type what you are working on."))
+                .font(.ui(10, s))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    // Collapsed mode: the other focuses as colored dots; click switches without expanding
+    @ViewBuilder private var dotsRow: some View {
+        if !hiddenFocuses.isEmpty {
+            HStack(spacing: 6 * s) {
+                ForEach(hiddenFocuses) { f in
+                    Button { store.switchTo(f.id) } label: {
+                        Circle()
+                            .strokeBorder(f.color, lineWidth: 1.5)
+                            .background(Circle().fill(f.color.opacity(0.25)))
+                            .frame(width: 9 * s, height: 9 * s)
+                    }
+                    .buttonStyle(.plain)
+                    .focusEffectDisabled()
+                    .help(f.title)
+                    .accessibilityLabel(f.title)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 8 * s)
+            .padding(.vertical, 3 * s)
         }
     }
 
