@@ -80,7 +80,7 @@ Optional VS Code task (`.vscode/tasks.json`) so ⌘⇧B does step 3:
 - The window stays on top, on all Spaces, and never steals focus. Drag it by the handle (≡) in the header.
   Its height follows the number of focuses. The position is remembered across launches; the default is the
   top-left corner. Hide and show it with ⌃⌥F or from the menu bar.
-- The header shows the state: a colored dot + "Working · 12 min", or a pause icon. The ⏸ button (shown while a
+- The header shows the state: a colored dot + "Working · 12 min", or "Paused". The ⏸ button (shown while a
   focus runs) pauses, **+** adds a focus (type, Enter; Esc cancels). At most 3 focuses by default, configurable 1–50 in Settings.
 - Each focus has its own color (assigned automatically, change it via right-click → Color).
 - While the mouse is away the panel shows only the active focus (or the last active one while paused); the other

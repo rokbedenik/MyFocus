@@ -145,10 +145,13 @@ struct PanelView: View {
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                 } else {
-                    Image(systemName: "pause.fill")
-                        .font(.ui(13, s))
+                    // Hollow dot mirrors the colored one of a running focus
+                    Circle()
+                        .strokeBorder(.secondary, lineWidth: 1.5 * s)
+                        .frame(width: 8 * s, height: 8 * s)
+                    Text(L.t("Paused"))
+                        .font(.ui(13, s, weight: .semibold))
                         .foregroundStyle(.secondary)
-                        .accessibilityLabel(L.t("Paused"))
                 }
                 Spacer(minLength: 0)
             }
