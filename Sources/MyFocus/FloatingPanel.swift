@@ -18,9 +18,10 @@ final class FloatingPanel: NSPanel {
     private static let legacyPositionKey = "panelPosition"
 
     // Idle dimming: fade to dimmedAlpha after dimAfterSeconds without the mouse over the panel; a click wakes it
-    var dimAfterSeconds: Int = 10 { didSet { touch() } }
-    // Set while something needs attention (nudge, calendar suggestion); keeps the panel fully visible
-    var holdAwake = false { didSet { touch() } }
+    var dimAfterSeconds: Int = 10 { didSet { if oldValue != dimAfterSeconds { touch() } } }
+    // Set while something needs attention (nudge, calendar suggestion); keeps the panel fully visible.
+    // Re-assigned every 30 s by the clock tick, so only a real change may wake a dimmed panel.
+    var holdAwake = false { didSet { if oldValue != holdAwake { touch() } } }
     private let dimmedAlpha: CGFloat = 0.45
     private var dimTimer: Timer?
     private var mouseInside = false
