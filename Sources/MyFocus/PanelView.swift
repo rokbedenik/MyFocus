@@ -74,6 +74,7 @@ struct PanelView: View {
                             .simultaneousGesture(TapGesture().onEnded { if collapsed { expanded = true } })
                     }
                     if !hiddenFocuses.isEmpty {
+                        // Colored dots for the hidden focuses, then a grey chevron (no circle, so it does not read as a focus)
                         HStack(spacing: 6 * s) {
                             ForEach(hiddenFocuses) { f in
                                 Button { store.switchTo(f.id) } label: {
@@ -87,6 +88,15 @@ struct PanelView: View {
                                 .help(f.title)
                                 .accessibilityLabel(f.title)
                             }
+                            expandChevron
+                            Spacer()
+                        }
+                        .padding(.horizontal, 8 * s)
+                        .padding(.vertical, 3 * s)
+                    } else if settings.collapseWhenIdle && store.focuses.count > 1 {
+                        // Expanded: the same spot holds the chevron to fold the list again
+                        HStack {
+                            expandChevron
                             Spacer()
                         }
                         .padding(.horizontal, 8 * s)
@@ -132,6 +142,21 @@ struct PanelView: View {
         }
     }
 
+    // Small grey chevron, dot-sized: shows all focuses, or folds them away again
+    private var expandChevron: some View {
+        Button { expanded.toggle() } label: {
+            Image(systemName: collapsed ? "chevron.down" : "chevron.up")
+                .font(.ui(8, s, weight: .bold))
+                .foregroundStyle(.secondary)
+                .frame(width: 9 * s, height: 9 * s)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .focusEffectDisabled()
+        .accessibilityLabel(collapsed ? L.t("Show all focuses") : L.t("Show only the active focus"))
+        .help(collapsed ? L.t("Show all focuses") : L.t("Show only the active focus"))
+    }
+
     // MARK: - Header: drag area + state + always-visible buttons
 
     private var header: some View {
@@ -166,15 +191,6 @@ struct PanelView: View {
             .overlay(DragHandle(onContextMenu: commands.contextMenu))
             .help(L.t("Drag to move the window, right-click for the menu"))
 
-            if settings.collapseWhenIdle && store.focuses.count > 1 {
-                Button { expanded.toggle() } label: {
-                    Image(systemName: collapsed ? "chevron.down.circle" : "chevron.up.circle")
-                        .font(.ui(15, s))
-                }
-                .buttonStyle(.borderless)
-                .accessibilityLabel(collapsed ? L.t("Show all focuses") : L.t("Show only the active focus"))
-                .help(collapsed ? L.t("Show all focuses") : L.t("Show only the active focus"))
-            }
             // Only while a focus runs; the header already shows the pause icon otherwise
             if store.active != nil {
                 Button { store.pause() } label: {

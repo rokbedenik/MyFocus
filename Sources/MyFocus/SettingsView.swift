@@ -121,7 +121,7 @@ struct SettingsView: View {
 
                     Section(L.t("Window")) {
                         Toggle(L.t("Show only the active focus until the window is clicked"), isOn: $settings.collapseWhenIdle)
-                        Text(L.t("A click on the row or the chevron shows all focuses; they fold away again once the mouse leaves. While paused the last active one stays visible."))
+                        Text(L.t("A click on the row or the small chevron next to the dots shows all focuses; they fold away again once the mouse leaves. While paused the last active one stays visible."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         HStack {

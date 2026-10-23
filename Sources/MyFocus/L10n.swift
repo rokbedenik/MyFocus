@@ -91,7 +91,7 @@ enum L {
         "Language": "Jezik",
         "Window": "Okno",
         "Show only the active focus until the window is clicked": "Pokaži samo aktivni fokus, dokler okna ne klikneš",
-        "A click on the row or the chevron shows all focuses; they fold away again once the mouse leaves. While paused the last active one stays visible.":
+        "A click on the row or the small chevron next to the dots shows all focuses; they fold away again once the mouse leaves. While paused the last active one stays visible.":
             "Klik na vrstico ali puščico pokaže vse fokuse; ko miška zapusti okno, se spet skrijejo. Med pavzo ostane viden zadnji aktivni.",
         "Show all focuses": "Pokaži vse fokuse",
         "Show only the active focus": "Pokaži samo aktivni fokus",
