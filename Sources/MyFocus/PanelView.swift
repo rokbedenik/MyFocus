@@ -88,16 +88,16 @@ struct PanelView: View {
                                 .help(f.title)
                                 .accessibilityLabel(f.title)
                             }
-                            expandChevron
                             Spacer()
+                            expandChevron
                         }
                         .padding(.horizontal, 8 * s)
                         .padding(.vertical, 3 * s)
                     } else if settings.collapseWhenIdle && store.focuses.count > 1 {
-                        // Expanded: the same spot holds the chevron to fold the list again
+                        // Expanded: the same spot (far right) holds the chevron to fold the list again
                         HStack {
-                            expandChevron
                             Spacer()
+                            expandChevron
                         }
                         .padding(.horizontal, 8 * s)
                         .padding(.vertical, 3 * s)
